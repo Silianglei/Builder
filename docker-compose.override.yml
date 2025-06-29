@@ -1,0 +1,22 @@
+# Development overrides for hot reload
+# This file is automatically used by docker-compose in development
+
+version: '3.8'
+
+services:
+  frontend:
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    command: npm run dev
+    environment:
+      - NODE_ENV=development
+
+  backend:
+    volumes:
+      - ./backend:/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    environment:
+      - ENVIRONMENT=development
+      - PYTHONUNBUFFERED=1
