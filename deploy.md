@@ -14,7 +14,6 @@
    ```
    SUPABASE_URL=your_supabase_url
    SUPABASE_ANON_KEY=your_supabase_anon_key
-   JWT_SECRET_KEY=your_jwt_secret
    CORS_ORIGINS=https://your-frontend-url.onrender.com
    ENVIRONMENT=production
    ```
@@ -63,7 +62,6 @@ Copy and fill out:
 ```env
 SUPABASE_URL=your_supabase_url
 SUPABASE_ANON_KEY=your_supabase_anon_key
-JWT_SECRET_KEY=your_super_secret_key
 CORS_ORIGINS=http://localhost:3000
 ENVIRONMENT=development
 ```

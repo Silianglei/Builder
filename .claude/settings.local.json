@@ -8,7 +8,8 @@
       "Bash(grep:*)",
       "Bash(rm:*)",
       "Bash(npm run build:*)",
-      "Bash(make:*)"
+      "Bash(make:*)",
+      "Bash(docker-compose:*)"
     ],
     "deny": []
   }

@@ -24,21 +24,16 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     
-    # CORS Configuration
-    CORS_ORIGINS: List[str] = ["http://localhost:3000"]
-    
-    # Security
-    SECRET_KEY: str = JWT_SECRET_KEY
+    # CORS Configuration - Simple string that we'll parse
+    CORS_ORIGINS: str = "http://localhost:3000"
     
     class Config:
         env_file = ".env"
         case_sensitive = True
-        
-        @classmethod
-        def parse_env_var(cls, field_name: str, raw_val: str) -> any:
-            if field_name == 'CORS_ORIGINS':
-                return [origin.strip() for origin in raw_val.split(',')]
-            return cls.json_loads(raw_val)
+    
+    def get_cors_origins(self) -> List[str]:
+        """Parse CORS origins from comma-separated string."""
+        return [origin.strip() for origin in self.CORS_ORIGINS.split(',')]
 
 @lru_cache()
 def get_settings() -> Settings:

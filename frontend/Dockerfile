@@ -27,9 +27,6 @@ FROM node:20-alpine AS runner
 
 WORKDIR /app
 
-# Set NodeJS to production mode
-ENV NODE_ENV=production
-
 # Create necessary directories
 RUN mkdir -p ./public
 
