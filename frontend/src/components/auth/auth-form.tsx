@@ -10,14 +10,15 @@ import { Mail, Lock, ArrowRight } from 'lucide-react';
 interface AuthFormProps {
   isLightMode?: boolean;
   onToggleSignUp?: (isSignUp: boolean) => void;
+  initialIsSignUp?: boolean;
 }
 
-export function AuthForm({ isLightMode = false, onToggleSignUp }: AuthFormProps) {
+export function AuthForm({ isLightMode = false, onToggleSignUp, initialIsSignUp = false }: AuthFormProps) {
   const { signIn, signUp, loading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [isSignUp, setIsSignUp] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(initialIsSignUp);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const router = useRouter();
 

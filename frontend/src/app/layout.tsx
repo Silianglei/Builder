@@ -10,8 +10,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Template App",
-  description: "A scalable template for future projects",
+  title: "5am Founder - Launch Your Startup in Minutes",
+  description: "The fastest way to ship your SaaS. Database, auth, payments, and AI-powered development – everything you need to go from idea to launch before sunrise.",
   icons: {
     icon: '/favicon.ico',
   },

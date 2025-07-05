@@ -101,12 +101,68 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const signInWithGitHub = async () => {
+    setLoading(true)
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'github',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+          skipBrowserRedirect: false
+        }
+      })
+      
+      if (error) {
+        setLoading(false)
+        return { error: error.message }
+      }
+      
+      // Don't set loading to false here - the redirect will happen
+      // Loading state will be reset when the page redirects
+      return {}
+    } catch (error) {
+      setLoading(false)
+      return { error: 'An unexpected error occurred' }
+    }
+  }
+
+  const signInWithGoogle = async () => {
+    setLoading(true)
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+          skipBrowserRedirect: false,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent'
+          }
+        }
+      })
+      
+      if (error) {
+        setLoading(false)
+        return { error: error.message }
+      }
+      
+      // Don't set loading to false here - the redirect will happen
+      // Loading state will be reset when the page redirects
+      return {}
+    } catch (error) {
+      setLoading(false)
+      return { error: 'An unexpected error occurred' }
+    }
+  }
+
   const value: AuthContextType = {
     user,
     loading,
     signIn,
     signUp,
     signOut,
+    signInWithGitHub,
+    signInWithGoogle,
   }
 
   return (
