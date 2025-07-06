@@ -108,7 +108,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         provider: 'github',
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
-          skipBrowserRedirect: false
+          skipBrowserRedirect: false,
+          scopes: 'repo read:org'
         }
       })
       

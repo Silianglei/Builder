@@ -1,178 +1,142 @@
 "use client"
 
 import { ProtectedRoute } from '@/components/auth/protected-route'
-import { Navbar } from '@/components/layout/navbar'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAuth } from '@/hooks/useAuth'
+import GitHubTest from '@/components/github-test'
+import GitHubDebug from '@/components/github-debug'
+import Link from 'next/link'
 
 export default function DashboardPage() {
-  const { user } = useAuth()
+  const { user, signOut } = useAuth()
   
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-background">
-        <Navbar />
+      <div className="min-h-screen bg-[#0a0a0a] text-white overflow-hidden relative">
+        {/* Background Elements */}
+        <div className="fixed inset-0 pointer-events-none">
+          <div className="absolute top-20 left-10 w-72 h-72 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-float"></div>
+          <div className="absolute top-40 right-10 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-float" style={{ animationDelay: '2s' }}></div>
+          <div className="absolute bottom-20 left-1/2 w-72 h-72 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-float" style={{ animationDelay: '4s' }}></div>
+        </div>
+
+        <style jsx global>{`
+          @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(30px, -30px) rotate(120deg); }
+            66% { transform: translate(-20px, 20px) rotate(240deg); }
+          }
+          
+          .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+          }
+          
+          .gradient-border {
+            background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%);
+            padding: 1px;
+            border-radius: 0.75rem;
+          }
+          
+          .gradient-text {
+            background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+          }
+        `}</style>
+
+        {/* Navigation */}
+        <nav className="fixed top-0 w-full z-50 px-6 py-4 bg-[#0a0a0a]/80 backdrop-blur-xl border-b border-white/5">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <Link href="/" className="text-xl font-semibold">
+              5AM Founder
+            </Link>
+            <div className="flex items-center space-x-4">
+              <Link 
+                href="/newproject" 
+                className="flex items-center space-x-2 px-5 py-2.5 glass-card rounded-lg font-medium transition-all hover:bg-white/5"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+                <span>New Project</span>
+              </Link>
+              <button 
+                onClick={signOut} 
+                className="text-sm text-gray-400 hover:text-white transition-colors"
+              >
+                Sign Out
+              </button>
+            </div>
+          </div>
+        </nav>
         
-        <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-          <div className="space-y-8">
+        <main className="relative px-6 pt-24 pb-20">
+          <div className="max-w-7xl mx-auto space-y-8">
             {/* Welcome Section */}
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">
-                Welcome back{user?.email ? `, ${user.email.split('@')[0]}` : ''}!
+            <div className="text-center mb-12">
+              <h1 className="text-3xl sm:text-4xl font-bold mb-3">
+                Welcome back, <span className="gradient-text">{user?.email?.split('@')[0] || 'Developer'}</span>
               </h1>
-              <p className="text-muted-foreground mt-2">
-                This is your blank dashboard. Start building your app here.
+              <p className="text-gray-400">
+                Your projects and GitHub integration status
               </p>
             </div>
 
-            {/* Quick Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
-                    Total Users
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">0</div>
-                  <p className="text-xs text-muted-foreground">Start adding users</p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
-                    Revenue
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">$0</div>
-                  <p className="text-xs text-muted-foreground">Implement payments</p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
-                    Active Sessions
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">1</div>
-                  <p className="text-xs text-muted-foreground">You are here!</p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
-                    Conversion Rate
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">0%</div>
-                  <p className="text-xs text-muted-foreground">Track conversions</p>
-                </CardContent>
-              </Card>
+            {/* GitHub Test Component */}
+            <div className="mb-12 space-y-6">
+              <GitHubDebug />
+              <GitHubTest />
             </div>
 
-            {/* Main Content Area */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <Card className="lg:col-span-2">
-                <CardHeader>
-                  <CardTitle>Getting Started</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-4">
-                    <div className="flex items-start space-x-3">
-                      <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <span className="text-xs font-medium text-primary">1</span>
-                      </div>
-                      <div>
-                        <h3 className="font-medium">Set up your environment</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Configure your environment variables in .env.local
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-start space-x-3">
-                      <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <span className="text-xs font-medium text-primary">2</span>
-                      </div>
-                      <div>
-                        <h3 className="font-medium">Customize your brand</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Update colors, fonts, and logos to match your brand
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-start space-x-3">
-                      <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <span className="text-xs font-medium text-primary">3</span>
-                      </div>
-                      <div>
-                        <h3 className="font-medium">Build your features</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Start adding your core features and business logic
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-start space-x-3">
-                      <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <span className="text-xs font-medium text-primary">4</span>
-                      </div>
-                      <div>
-                        <h3 className="font-medium">Deploy to production</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Use the included Docker configuration for deployment
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+            {/* Quick Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+              <div className="glass-card rounded-xl p-6">
+                <div className="text-sm text-gray-400 mb-2">Projects Created</div>
+                <div className="text-3xl font-bold gradient-text">0</div>
+                <p className="text-xs text-gray-500 mt-1">Start creating</p>
+              </div>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Resources</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="space-y-2">
-                    <a 
-                      href="#" 
-                      className="block p-3 rounded-lg hover:bg-muted/50 transition-colors"
-                    >
-                      <h4 className="font-medium">Documentation</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Learn how to use this template
-                      </p>
-                    </a>
-                    
-                    <a 
-                      href="#" 
-                      className="block p-3 rounded-lg hover:bg-muted/50 transition-colors"
-                    >
-                      <h4 className="font-medium">API Reference</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Explore the backend API endpoints
-                      </p>
-                    </a>
-                    
-                    <a 
-                      href="#" 
-                      className="block p-3 rounded-lg hover:bg-muted/50 transition-colors"
-                    >
-                      <h4 className="font-medium">Component Library</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Browse available UI components
-                      </p>
-                    </a>
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="glass-card rounded-xl p-6">
+                <div className="text-sm text-gray-400 mb-2">GitHub Repos</div>
+                <div className="text-3xl font-bold gradient-text">--</div>
+                <p className="text-xs text-gray-500 mt-1">Connect GitHub</p>
+              </div>
+
+              <div className="glass-card rounded-xl p-6">
+                <div className="text-sm text-gray-400 mb-2">Deploy Status</div>
+                <div className="text-3xl font-bold text-green-400">Ready</div>
+                <p className="text-xs text-gray-500 mt-1">All systems go</p>
+              </div>
+
+              <div className="glass-card rounded-xl p-6">
+                <div className="text-sm text-gray-400 mb-2">API Status</div>
+                <div className="text-3xl font-bold text-green-400">Online</div>
+                <p className="text-xs text-gray-500 mt-1">100% uptime</p>
+              </div>
+            </div>
+
+            {/* Recent Projects Section */}
+            <div className="glass-card rounded-xl p-8">
+              <h2 className="text-2xl font-bold mb-6">Recent Projects</h2>
+              <div className="text-center py-12">
+                <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-10 h-10 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                  </svg>
+                </div>
+                <p className="text-gray-400 mb-6">No projects yet</p>
+                <Link
+                  href="/newproject"
+                  className="inline-flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg font-medium hover:from-blue-700 hover:to-purple-700 transition-all"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  <span>Create Your First Project</span>
+                </Link>
+              </div>
             </div>
           </div>
         </main>

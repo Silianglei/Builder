@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 import logging
 
 from .config import get_settings
-from .routers import auth, users
+from .routers import auth, users, github
 from .db.supabase_client import get_supabase_client
 from .middleware import SecurityHeadersMiddleware, RateLimitMiddleware
 
@@ -40,7 +40,7 @@ app.add_middleware(
     allow_origins=settings.get_cors_origins(),  # Specific origins only
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],  # Specific methods
-    allow_headers=["Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With"],  # Specific headers
+    allow_headers=["Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With", "X-GitHub-Token"],  # Specific headers
     expose_headers=["X-RateLimit-Limit", "X-RateLimit-Remaining", "X-RateLimit-Reset"],
     max_age=86400,  # Cache preflight requests for 24 hours
 )
@@ -48,6 +48,7 @@ app.add_middleware(
 # Include routers
 app.include_router(auth.router, prefix=f"{settings.API_V1_STR}/auth", tags=["auth"])
 app.include_router(users.router, prefix=f"{settings.API_V1_STR}/users", tags=["users"])
+app.include_router(github.router, tags=["github"])
 
 # Set up logging
 logger = logging.getLogger("uvicorn")

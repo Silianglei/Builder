@@ -64,7 +64,7 @@ const initialConfig: ProjectConfig = {
 
 export default function NewProjectPage() {
   const router = useRouter()
-  const { user } = useAuth()
+  const { user, signInWithGitHub } = useAuth()
   const [currentStep, setCurrentStep] = useState(1)
   const [config, setConfig] = useState<ProjectConfig>(initialConfig)
   const [isCreating, setIsCreating] = useState(false)
@@ -100,9 +100,11 @@ export default function NewProjectPage() {
 
   const handleCreateProject = async () => {
     if (!user) {
-      // Save current config and redirect to auth
+      // Save current config for after auth
       localStorage.setItem('redirectAfterAuth', '/newproject')
-      router.push('/auth')
+      
+      // Directly trigger GitHub OAuth instead of going to auth page
+      await signInWithGitHub()
       return
     }
 
