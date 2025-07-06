@@ -1,0 +1,260 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/hooks/useAuth"
+import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react"
+
+// Step Components (we'll create these next)
+import StepIndicator from "./components/StepIndicator"
+import ProjectDetailsStep from "./components/ProjectDetailsStep"
+import IntegrationsStep from "./components/IntegrationsStep"
+import TechStackStep from "./components/TechStackStep"
+import ReviewStep from "./components/ReviewStep"
+
+export interface ProjectConfig {
+  // Step 1: Project Details
+  projectName: string
+  projectDescription: string
+  isPrivate: boolean
+  initWithReadme: boolean
+  
+  // Step 2: Integrations
+  integrations: {
+    supabaseAuth: boolean
+    supabaseAuthProviders?: string[]
+    stripe: boolean
+    database: 'supabase' | 'postgresql' | 'none'
+    email: 'resend' | 'sendgrid' | 'none'
+    analytics: 'posthog' | 'google' | 'none'
+  }
+  
+  // Step 3: Tech Stack
+  techStack: {
+    frontend: 'nextjs15'
+    styling: 'tailwind'
+    typescript: boolean
+    testing: 'jest' | 'vitest' | 'none'
+    docker: boolean
+  }
+}
+
+const initialConfig: ProjectConfig = {
+  projectName: '',
+  projectDescription: '',
+  isPrivate: false,
+  initWithReadme: true,
+  integrations: {
+    supabaseAuth: true,
+    supabaseAuthProviders: ['github', 'google'],
+    stripe: false,
+    database: 'supabase',
+    email: 'none',
+    analytics: 'none'
+  },
+  techStack: {
+    frontend: 'nextjs15',
+    styling: 'tailwind',
+    typescript: true,
+    testing: 'none',
+    docker: true
+  }
+}
+
+export default function NewProjectPage() {
+  const router = useRouter()
+  const { user } = useAuth()
+  const [currentStep, setCurrentStep] = useState(1)
+  const [config, setConfig] = useState<ProjectConfig>(initialConfig)
+  const [isCreating, setIsCreating] = useState(false)
+
+  // Load saved config from localStorage if exists
+  useEffect(() => {
+    const savedConfig = localStorage.getItem('projectConfig')
+    if (savedConfig) {
+      setConfig(JSON.parse(savedConfig))
+    }
+  }, [])
+
+  // Save config to localStorage on changes
+  useEffect(() => {
+    localStorage.setItem('projectConfig', JSON.stringify(config))
+  }, [config])
+
+  const updateConfig = (updates: Partial<ProjectConfig>) => {
+    setConfig(prev => ({ ...prev, ...updates }))
+  }
+
+  const handleNext = () => {
+    if (currentStep < 4) {
+      setCurrentStep(prev => prev + 1)
+    }
+  }
+
+  const handlePrevious = () => {
+    if (currentStep > 1) {
+      setCurrentStep(prev => prev - 1)
+    }
+  }
+
+  const handleCreateProject = async () => {
+    if (!user) {
+      // Save current config and redirect to auth
+      localStorage.setItem('redirectAfterAuth', '/newproject')
+      router.push('/auth')
+      return
+    }
+
+    setIsCreating(true)
+    // TODO: Implement actual project creation API call
+    console.log('Creating project with config:', config)
+    
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    
+    // Clear saved config
+    localStorage.removeItem('projectConfig')
+    
+    // Redirect to dashboard or project page
+    router.push('/dashboard')
+  }
+
+  const renderStep = () => {
+    switch (currentStep) {
+      case 1:
+        return <ProjectDetailsStep config={config} updateConfig={updateConfig} />
+      case 2:
+        return <IntegrationsStep config={config} updateConfig={updateConfig} />
+      case 3:
+        return <TechStackStep config={config} updateConfig={updateConfig} />
+      case 4:
+        return <ReviewStep config={config} user={user} />
+      default:
+        return null
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-[#0a0a0a] text-white overflow-hidden relative">
+      {/* Background Elements */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-20 left-10 w-72 h-72 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-float"></div>
+        <div className="absolute top-40 right-10 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-float" style={{ animationDelay: '2s' }}></div>
+        <div className="absolute bottom-20 left-1/2 w-72 h-72 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-float" style={{ animationDelay: '4s' }}></div>
+      </div>
+
+      <style jsx global>{`
+        @keyframes float {
+          0%, 100% { transform: translate(0, 0) rotate(0deg); }
+          33% { transform: translate(30px, -30px) rotate(120deg); }
+          66% { transform: translate(-20px, 20px) rotate(240deg); }
+        }
+        
+        .glass-card {
+          background: rgba(255, 255, 255, 0.03);
+          backdrop-filter: blur(10px);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .gradient-border {
+          background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%);
+          padding: 1px;
+          border-radius: 0.75rem;
+        }
+        
+        .gradient-text {
+          background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+        }
+      `}</style>
+
+      {/* Navigation */}
+      <nav className="fixed top-0 w-full z-50 px-6 py-4 bg-[#0a0a0a]/80 backdrop-blur-xl border-b border-white/5">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <Link href="/" className="flex items-center space-x-3">
+            <ChevronLeft className="w-5 h-5 text-gray-400" />
+            <span className="text-xl font-semibold">5AM Founder</span>
+          </Link>
+
+          <div className="flex items-center space-x-2">
+            <Sparkles className="w-5 h-5 text-yellow-400" />
+            <span className="text-sm text-gray-400">Building magic</span>
+          </div>
+        </div>
+      </nav>
+
+      {/* Main Content */}
+      <main className="relative px-6 pt-24 pb-20">
+        <div className="max-w-3xl mx-auto">
+          {/* Header */}
+          <div className="text-center mb-10">
+            <h1 className="text-3xl sm:text-4xl font-bold mb-3">
+              Create Your <span className="gradient-text">Project</span>
+            </h1>
+            <p className="text-base text-gray-400">
+              Set up your perfect stack in minutes
+            </p>
+          </div>
+
+          {/* Step Indicator */}
+          <StepIndicator currentStep={currentStep} totalSteps={4} />
+
+          {/* Step Content */}
+          <div className="mt-12 mb-8">
+            {renderStep()}
+          </div>
+
+          {/* Navigation Buttons */}
+          <div className="flex justify-between items-center mt-12">
+            <button
+              onClick={handlePrevious}
+              disabled={currentStep === 1}
+              className={`flex items-center space-x-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                currentStep === 1
+                  ? 'opacity-0 pointer-events-none'
+                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <ChevronLeft className="w-4 h-4" />
+              <span>Back</span>
+            </button>
+
+            {currentStep < 4 ? (
+              <button
+                onClick={handleNext}
+                className="flex items-center space-x-2 px-6 py-2.5 bg-white text-black rounded-lg font-medium hover:bg-gray-100 transition-all"
+              >
+                <span>Continue</span>
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            ) : (
+              <button
+                onClick={handleCreateProject}
+                disabled={isCreating}
+                className="flex items-center space-x-2 px-6 py-2.5 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg font-medium hover:opacity-90 transition-all disabled:opacity-50"
+              >
+                {isCreating ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>Creating...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>{user ? 'Create Project' : 'Sign in & Create'}</span>
+                    <Sparkles className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+        </div>
+      </main>
+    </div>
+  )
+}
