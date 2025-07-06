@@ -3,6 +3,9 @@ export interface User {
   email: string
   created_at: string
   updated_at: string
+  name?: string
+  avatar_url?: string
+  username?: string
 }
 
 export interface AuthState {

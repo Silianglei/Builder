@@ -5,10 +5,112 @@ import { useAuth } from '@/hooks/useAuth'
 import { useRepositories } from '@/hooks/useRepositories'
 import RepositoryList from '@/components/repository-list'
 import Link from 'next/link'
+import { useState, useRef, useEffect } from 'react'
+import { ChevronDown, Settings, LogOut, User, Plus, RefreshCcw } from 'lucide-react'
+
+// UserDropdown Component
+function UserDropdown({ user, signOut }: { user: any; signOut: () => void }) {
+  const [isOpen, setIsOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center space-x-3 px-4 py-2 glass-card rounded-lg transition-all hover:bg-white/5"
+      >
+        {user?.avatar_url ? (
+          <img
+            src={user.avatar_url}
+            alt={user.name || user.email}
+            className="w-8 h-8 rounded-full"
+          />
+        ) : (
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
+            <span className="text-sm font-medium text-white">
+              {(user?.name || user?.email || 'U')[0].toUpperCase()}
+            </span>
+          </div>
+        )}
+        <span className="text-sm font-medium">{user?.name || user?.username || user?.email?.split('@')[0] || 'User'}</span>
+        <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      {isOpen && (
+        <div className="absolute right-0 mt-2 w-48 glass-card rounded-xl overflow-hidden animate-slide-up">
+          <div className="p-4 border-b border-white/10">
+            <div className="flex items-center space-x-3">
+              {user?.avatar_url ? (
+                <img
+                  src={user.avatar_url}
+                  alt={user.name || user.email}
+                  className="w-10 h-10 rounded-full"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
+                  <span className="text-lg font-medium text-white">
+                    {(user?.name || user?.email || 'U')[0].toUpperCase()}
+                  </span>
+                </div>
+              )}
+              <div>
+                <p className="font-medium">{user?.name || user?.username || 'User'}</p>
+                <p className="text-xs text-gray-400">{user?.email}</p>
+              </div>
+            </div>
+          </div>
+          <div className="p-2">
+            <Link
+              href="/settings"
+              className="flex items-center space-x-3 px-4 py-2.5 rounded-lg transition-all hover:bg-white/5"
+              onClick={() => setIsOpen(false)}
+            >
+              <Settings className="w-4 h-4 text-gray-400" />
+              <span className="text-sm">Settings</span>
+            </Link>
+            <button
+              onClick={() => {
+                setIsOpen(false)
+                signOut()
+              }}
+              className="w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg transition-all hover:bg-white/5 text-left"
+            >
+              <LogOut className="w-4 h-4 text-gray-400" />
+              <span className="text-sm">Sign Out</span>
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function DashboardPage() {
   const { user, signOut } = useAuth()
   const { repositories, loading, error, refresh, deleteRepository } = useRepositories()
+  
+  // Filter only 5AM Founder repositories
+  const filteredRepos = repositories
+    .map(repo => ({
+      ...repo,
+      is_5am_founder: repo.description?.toLowerCase().includes('5am founder') || 
+                      repo.description?.toLowerCase().includes('created with 5am founder') ||
+                      repo.topics?.includes('5am-founder') ||
+                      repo.topics?.includes('5amfounder') ||
+                      false
+    }))
+    .filter(repo => repo.is_5am_founder)
   
   return (
     <ProtectedRoute>
@@ -27,10 +129,26 @@ export default function DashboardPage() {
             66% { transform: translate(-20px, 20px) rotate(240deg); }
           }
           
+          @keyframes slide-up {
+            from {
+              opacity: 0;
+              transform: translateY(10px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+          
+          .animate-slide-up {
+            animation: slide-up 0.2s ease-out;
+          }
+          
           .glass-card {
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            -webkit-backdrop-filter: blur(20px);
           }
           
           .gradient-border {
@@ -53,66 +171,63 @@ export default function DashboardPage() {
             <Link href="/" className="text-xl font-semibold">
               5AM Founder
             </Link>
-            <div className="flex items-center space-x-4">
-              <Link 
-                href="/newproject" 
-                className="flex items-center space-x-2 px-5 py-2.5 glass-card rounded-lg font-medium transition-all hover:bg-white/5"
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                </svg>
-                <span>New Project</span>
-              </Link>
-              <Link 
-                href="/settings" 
-                className="text-sm text-gray-400 hover:text-white transition-colors"
-              >
-                Settings
-              </Link>
-              <button 
-                onClick={signOut} 
-                className="text-sm text-gray-400 hover:text-white transition-colors"
-              >
-                Sign Out
-              </button>
-            </div>
+            <UserDropdown user={user} signOut={signOut} />
           </div>
         </nav>
         
         <main className="relative px-6 pt-32 pb-20">
           <div className="max-w-7xl mx-auto">
-            {/* Header Section */}
-            <div className="text-center mb-16">
-              {/* Badge */}
-              <div className="inline-flex items-center space-x-2 mb-8 px-4 py-2 glass-card rounded-full">
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                <span className="text-sm text-gray-300">GitHub Connected</span>
+            {/* Welcome Section */}
+            <div className="mb-20">
+              {/* Welcome Message */}
+              <div className="text-center mb-16">
+                <div className="inline-block mb-6">
+                  <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold mb-2 tracking-tight">
+                    Welcome back,
+                  </h1>
+                  <h2 className="text-5xl sm:text-6xl md:text-7xl font-bold gradient-text">
+                    {user?.name || user?.email?.split('@')[0] || 'Developer'}
+                  </h2>
+                </div>
+                
+                <p className="text-xl sm:text-2xl text-gray-400 max-w-3xl mx-auto font-light">
+                  Ready to build something amazing today?
+                </p>
               </div>
-              
-              <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 leading-tight">
-                Your <span className="gradient-text">Repositories</span>
-              </h1>
-              
-              <p className="text-lg sm:text-xl text-gray-400 max-w-2xl mx-auto">
-                Manage and deploy your projects with a single click
-              </p>
+
+              {/* Create New Project CTA */}
+              <div className="flex justify-center">
+                <Link
+                  href="/newproject"
+                  className="group relative"
+                >
+                  <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
+                  <div className="relative flex items-center space-x-4 px-8 py-4 bg-black rounded-2xl leading-none">
+                    <Plus className="w-6 h-6" />
+                    <span className="font-semibold text-lg">Create New Project</span>
+                  </div>
+                </Link>
+              </div>
             </div>
 
             {/* Repositories Section */}
             <div className="max-w-7xl mx-auto">
-              <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center justify-between mb-12">
                 <div>
-                  <h2 className="text-2xl font-bold">GitHub Projects</h2>
-                  <p className="text-sm text-gray-500 mt-1">{repositories.length} repositories found</p>
+                  <h2 className="text-4xl font-bold mb-2">Your Projects</h2>
+                  <p className="text-base text-gray-400">
+                    {filteredRepos.length === 0 
+                      ? 'No projects yet' 
+                      : `${filteredRepos.length} ${filteredRepos.length === 1 ? 'project' : 'projects'} created with 5AM Founder`
+                    }
+                  </p>
                 </div>
                 <button
                   onClick={refresh}
                   disabled={loading}
-                  className="flex items-center space-x-2 px-4 py-2 glass-card rounded-lg font-medium transition-all hover:bg-white/5"
+                  className="group flex items-center space-x-2 px-5 py-2.5 rounded-xl bg-white/[0.02] border border-white/[0.05] text-sm font-medium transition-all hover:bg-white/[0.05] hover:border-white/[0.1] disabled:opacity-50"
                 >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
+                  <RefreshCcw className={`w-4 h-4 transition-transform group-hover:rotate-180 duration-500 ${loading ? 'animate-spin' : ''}`} />
                   <span>Refresh</span>
                 </button>
               </div>
@@ -123,15 +238,15 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 <RepositoryList 
-                  repositories={repositories} 
+                  repositories={filteredRepos} 
                   loading={loading} 
                   onRefresh={refresh}
                   onDelete={deleteRepository}
                 />
               )}
               
-              {/* Empty State CTA */}
-              {!loading && repositories.length === 0 && !error && (
+              {/* Empty State */}
+              {!loading && filteredRepos.length === 0 && !error && (
                 <div className="text-center py-20">
                   <div className="mb-8">
                     <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 mx-auto flex items-center justify-center mb-6">
@@ -139,22 +254,11 @@ export default function DashboardPage() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13.5 3H12H8C6.34315 3 5 4.34315 5 6V18C5 19.6569 6.34315 21 8 21H16C17.6569 21 19 19.6569 19 18V8.625M13.5 3L19 8.625M13.5 3V8.625H19" />
                       </svg>
                     </div>
-                    <h3 className="text-2xl font-bold mb-3">No repositories yet</h3>
-                    <p className="text-gray-400 mb-8 max-w-md mx-auto">
-                      Create your first project to see it here. We'll help you set up everything you need.
+                    <h3 className="text-2xl font-bold mb-3">No projects yet</h3>
+                    <p className="text-gray-400 max-w-md mx-auto">
+                      Create your first project with 5AM Founder to see it here.
                     </p>
                   </div>
-                  <Link
-                    href="/newproject"
-                    className="inline-flex items-center space-x-3 px-8 py-4 gradient-border group"
-                  >
-                    <div className="flex items-center space-x-3 px-6 py-3 bg-[#0a0a0a] rounded-[0.65rem] transition-all group-hover:bg-[#0a0a0a]/50">
-                      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                      </svg>
-                      <span className="font-semibold text-lg">Create New Project</span>
-                    </div>
-                  </Link>
                 </div>
               )}
             </div>

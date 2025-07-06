@@ -215,7 +215,7 @@ export default function GitHubTest() {
           <p className="text-red-400 font-medium">Error: {error}</p>
           {error.includes('GitHub token not found') && (
             <button
-              onClick={signInWithGitHub}
+              onClick={() => signInWithGitHub()}
               className="mt-3 px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm font-medium transition-colors"
             >
               Re-authenticate with GitHub

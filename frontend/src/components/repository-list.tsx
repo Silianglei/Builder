@@ -90,9 +90,6 @@ export default function RepositoryList({
           setSelectedRepository(null)
           setDeleteError(null)
         }}
-        onDelete={handleDelete}
-        deleting={deleting}
-        deleteError={deleteError}
       />
     </>
   )

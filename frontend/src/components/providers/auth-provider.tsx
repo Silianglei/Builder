@@ -43,6 +43,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     email: supabaseUser.email!,
     created_at: supabaseUser.created_at,
     updated_at: supabaseUser.updated_at || supabaseUser.created_at,
+    name: supabaseUser.user_metadata?.full_name || supabaseUser.user_metadata?.name,
+    avatar_url: supabaseUser.user_metadata?.avatar_url,
+    username: supabaseUser.user_metadata?.user_name || supabaseUser.user_metadata?.preferred_username,
   })
 
   const signIn = async (email: string, password: string) => {

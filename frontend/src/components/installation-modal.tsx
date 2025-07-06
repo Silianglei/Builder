@@ -8,25 +8,18 @@ import {
   ModalHeader,
   ModalTitle,
 } from '@/components/ui/modal'
-import { Copy, ExternalLink, Trash2, Check, Loader2, Terminal } from 'lucide-react'
+import { Copy, ExternalLink, Check, Terminal, Github } from 'lucide-react'
 
 interface InstallationModalProps {
   repository: Repository | null
   onClose: () => void
-  onDelete: () => Promise<void>
-  deleting?: boolean
-  deleteError?: string | null
 }
 
 export default function InstallationModal({ 
   repository, 
-  onClose, 
-  onDelete,
-  deleting = false,
-  deleteError = null
+  onClose
 }: InstallationModalProps) {
   const [copied, setCopied] = useState(false)
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   if (!repository) return null
 
@@ -49,121 +42,84 @@ export default function InstallationModal({
     }
   }
 
-  const handleDelete = async () => {
-    if (!showDeleteConfirm) {
-      setShowDeleteConfirm(true)
-      return
-    }
-    await onDelete()
-    setShowDeleteConfirm(false)
-  }
-
   return (
     <Modal open={!!repository} onOpenChange={() => onClose()}>
-      <ModalContent className="max-w-2xl p-8">
-        <ModalHeader>
-          <ModalTitle className="text-2xl font-bold mb-2">
-            {repository.name}
-          </ModalTitle>
+      <ModalContent className="max-w-3xl p-0 overflow-hidden">
+        <ModalHeader className="p-8 pb-0">
+          <div className="flex items-center space-x-3 mb-1">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500/10 to-purple-500/10 flex items-center justify-center">
+              <Github className="w-5 h-5 text-blue-400" />
+            </div>
+            <ModalTitle className="text-3xl font-bold gradient-text">
+              {repository.name}
+            </ModalTitle>
+          </div>
         </ModalHeader>
 
         {/* Content */}
-        <div className="space-y-6">
+        <div className="p-8 space-y-6">
           {/* Terminal */}
-          <div className="glass-card rounded-xl overflow-hidden">
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-b from-gray-900 to-black border border-white/10">
             {/* Terminal Header */}
-            <div className="bg-white/5 px-4 py-3 border-b border-white/10">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 rounded-full bg-red-500/80"></div>
-                  <div className="w-3 h-3 rounded-full bg-yellow-500/80"></div>
-                  <div className="w-3 h-3 rounded-full bg-green-500/80"></div>
-                </div>
-                <div className="text-xs text-gray-500 font-mono">terminal</div>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-black/50">
+              <div className="flex items-center space-x-2">
+                <Terminal className="w-4 h-4 text-gray-400" />
+                <span className="text-sm font-medium text-gray-400">Quick Start</span>
               </div>
+              <button
+                onClick={handleCopy}
+                className="flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-all group"
+                title="Copy commands"
+              >
+                {copied ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-green-400" />
+                    <span className="text-xs text-green-400">Copied!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5 text-gray-400 group-hover:text-white" />
+                    <span className="text-xs text-gray-400 group-hover:text-white">Copy</span>
+                  </>
+                )}
+              </button>
             </div>
             
             {/* Terminal Content */}
-            <div className="p-6 bg-black/20">
-              <div className="font-mono text-sm space-y-2">
+            <div className="p-6 font-mono text-sm">
+              <div className="space-y-3">
                 {commands.map((command, index) => (
-                  <div key={index} className="text-gray-300">
-                    <span className="text-gray-500 mr-2">$</span>
-                    {command}
+                  <div key={index} className="flex items-start space-x-3 group">
+                    <span className="text-blue-400 select-none">❯</span>
+                    <span className="text-gray-100 flex-1">{command}</span>
                   </div>
                 ))}
-                
-                <div className="mt-4 pt-4 border-t border-white/5">
-                  <div className="flex items-center space-x-2 text-green-400 text-xs">
-                    <Check className="w-3 h-3" />
-                    <span>Server running on http://localhost:3000</span>
-                  </div>
+              </div>
+              
+              <div className="mt-6 p-4 rounded-lg bg-green-500/10 border border-green-500/20">
+                <div className="flex items-center space-x-2 text-green-400">
+                  <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+                  <span className="text-sm">Server running on http://localhost:3000</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Error Message */}
-          {deleteError && (
-            <div className="mt-4 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
-              <p className="text-sm text-red-400 whitespace-pre-line">{deleteError}</p>
-            </div>
-          )}
-
           {/* Actions */}
-          <div className="flex items-center justify-between pt-4">
-            <div className="flex items-center space-x-3">
-              <button
-                onClick={handleCopy}
-                className="flex items-center space-x-2 px-4 py-2 glass-card rounded-lg transition-all hover:bg-white/5"
-              >
-                {copied ? (
-                  <>
-                    <Check className="w-4 h-4 text-green-400" />
-                    <span className="text-sm text-green-400">Copied</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-4 h-4" />
-                    <span className="text-sm">Copy Commands</span>
-                  </>
-                )}
-              </button>
-
-              <a
-                href={repository.html_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center space-x-2 px-4 py-2 glass-card rounded-lg transition-all hover:bg-white/5"
-              >
-                <ExternalLink className="w-4 h-4" />
-                <span className="text-sm">View on GitHub</span>
-              </a>
-            </div>
-
-            <button
-              onClick={handleDelete}
-              disabled={deleting}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all ${
-                showDeleteConfirm 
-                  ? 'bg-red-600/20 border border-red-500/30 text-red-400' 
-                  : 'text-gray-400 hover:text-red-400 hover:bg-red-900/20'
-              }`}
+          <div className="flex justify-center">
+            <a
+              href={repository.html_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group relative"
             >
-              {deleting ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span className="text-sm">Deleting...</span>
-                </>
-              ) : (
-                <>
-                  <Trash2 className="w-4 h-4" />
-                  <span className="text-sm">
-                    {showDeleteConfirm ? 'Confirm Delete' : 'Delete'}
-                  </span>
-                </>
-              )}
-            </button>
+              <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl blur opacity-25 group-hover:opacity-40 transition duration-300"></div>
+              <div className="relative flex items-center space-x-3 px-6 py-3 bg-black rounded-xl leading-none">
+                <Github className="w-5 h-5" />
+                <span className="font-medium">View on GitHub</span>
+                <ExternalLink className="w-4 h-4 opacity-50" />
+              </div>
+            </a>
           </div>
         </div>
       </ModalContent>
