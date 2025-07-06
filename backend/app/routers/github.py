@@ -233,3 +233,70 @@ async def list_repositories(
             status_code=500,
             detail=f"Failed to list repositories: {str(e)}"
         )
+
+
+@router.delete("/repositories/{owner}/{repo}")
+async def delete_repository(
+    owner: str,
+    repo: str,
+    request: Request,
+    current_user: Dict = Depends(get_current_user)
+) -> Dict[str, str]:
+    """Delete a GitHub repository"""
+    auth_header = request.headers.get("X-GitHub-Token")
+    if not auth_header:
+        raise HTTPException(
+            status_code=401,
+            detail="GitHub token not found. Please authenticate with GitHub first."
+        )
+    
+    try:
+        g = Github(auth_header)
+        github_user = g.get_user()
+        
+        # Verify the user owns the repository
+        if github_user.login != owner:
+            raise HTTPException(
+                status_code=403,
+                detail="You can only delete repositories you own."
+            )
+        
+        # Get the repository
+        try:
+            repository = g.get_repo(f"{owner}/{repo}")
+        except GithubException as e:
+            if e.status == 404:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Repository {owner}/{repo} not found."
+                )
+            raise
+        
+        # Delete the repository
+        repository.delete()
+        
+        return {"message": f"Repository {owner}/{repo} deleted successfully."}
+        
+    except GithubException as e:
+        if e.status == 403:
+            raise HTTPException(
+                status_code=403,
+                detail="Insufficient permissions. Make sure your token has 'delete_repo' scope."
+            )
+        elif e.status == 404:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Repository {owner}/{repo} not found."
+            )
+        else:
+            raise HTTPException(
+                status_code=e.status,
+                detail=f"GitHub API error: {e.data.get('message', str(e))}"
+            )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to delete repository: {str(e)}"
+        )
