@@ -1,6 +1,13 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with the 5AM Founder project - an automated SaaS boilerplate generator.
+
+## Project Overview
+
+5AM Founder helps developers ship their SaaS products in minutes by:
+1. Connecting to GitHub for repository creation
+2. Allowing selection of tech stack components
+3. Automatically generating a customized, production-ready codebase
 
 ## Quick Start
 
@@ -19,7 +26,9 @@ make prod      # Docker production build
 ## Tech Stack
 
 **Frontend**: Next.js 15 + TypeScript + Tailwind CSS + Supabase Auth  
-**Backend**: FastAPI + Python 3.11 + PyJWT + Supabase
+**Backend**: FastAPI + Python 3.11 + PyJWT + Supabase  
+**Styling**: Modern UI with glassmorphism, gradients, and animations  
+**Deployment**: Docker + Vercel/Render + GitHub Actions
 
 ## Environment Configuration (ULTRA-SIMPLIFIED!)
 
@@ -44,6 +53,22 @@ This automatically:
 - Mounts code for hot reload
 - Starts frontend on http://localhost:3000
 - Starts backend on http://localhost:8000
+- API docs at http://localhost:8000/docs
+
+### All Make Commands
+```bash
+make install        # Create .env from template
+make dev           # Start development environment
+make prod          # Build for production
+make down          # Stop all services
+make clean         # Remove containers and volumes
+make logs          # View all logs
+make logs-frontend # View frontend logs only
+make logs-backend  # View backend logs only
+make shell-frontend # Access frontend container
+make shell-backend  # Access backend container
+make local         # Show local dev instructions
+```
 
 ### Local Development (No Docker)
 ```bash
@@ -65,6 +90,12 @@ npm run dev
 
 ### Code Quality
 ```bash
+# Frontend
+cd frontend/
+npm run lint      # ESLint
+npm run type-check # TypeScript
+
+# Backend
 cd backend/
 black app/        # Format
 isort app/        # Sort imports
@@ -116,6 +147,14 @@ cd frontend && vercel
 
 ## Common Tasks
 
+### UI/UX Updates
+When modifying the UI:
+1. Refer to `docs/styles.md` for design patterns
+2. Use existing glass card effects and gradients
+3. Follow the established color palette
+4. Maintain responsive design (mobile-first)
+5. Use the SVG logos from the style guide
+
 ### Add Dependencies
 ```bash
 # Frontend
@@ -134,6 +173,17 @@ pip freeze | grep <package> >> requirements.txt
 ### Add Page
 1. Create `src/app/new-page/page.tsx`
 2. Use `ProtectedRoute` if auth required
+3. Follow the modern UI patterns (glass cards, gradients)
+4. Ensure mobile responsiveness
+
+### Working with the Landing Page
+The landing page (`frontend/src/app/page.tsx`) features:
+- Modern glassmorphism design
+- 3-step workflow visualization
+- Integration grid with actual logos
+- Terminal preview section
+- Floating background elements
+- Gradient text and borders
 
 ## Debugging
 
@@ -146,18 +196,53 @@ pip freeze | grep <package> >> requirements.txt
 - **401 errors**: Check JWT_SECRET_KEY and Supabase config
 - **Docker issues**: `make clean` then `make dev`
 
-## File Structure
+## Project Structure
 ```
 /builder/
 ├── .env              # Single config file!
 ├── .env.example      # Template
+├── README.md         # Project documentation
 ├── docker-compose.yml
 ├── docker-compose.override.yml  # Dev hot reload
 ├── Makefile          # Simple commands
-├── frontend/         # Next.js
-├── backend/          # FastAPI
+├── frontend/         # Next.js app
+│   ├── public/
+│   │   └── avatars/  # Professional avatar SVGs
+│   ├── src/
+│   │   ├── app/      # App Router pages
+│   │   ├── components/  # React components
+│   │   ├── hooks/    # Custom React hooks
+│   │   └── styles/   # Global CSS with modern effects
+│   └── package.json
+├── backend/          # FastAPI app
+│   ├── app/
+│   │   ├── main.py   # Entry point
+│   │   ├── routers/  # API endpoints
+│   │   └── models/   # Pydantic models
+│   └── requirements.txt
+├── docs/             # Documentation
+│   ├── styles.md     # Comprehensive UI/UX style guide
+│   └── SECURITY_CHECKLIST.md
 └── CLAUDE.md         # This file
 ```
+
+## Key Documentation
+
+### styles.md
+Located at `docs/styles.md`, contains:
+- Complete color palette and CSS variables
+- Modern UI components (glass cards, gradients, animations)
+- Typography system
+- SVG logo collection for all integrations
+- Animation patterns and best practices
+- Responsive design patterns
+
+### README.md
+The main project documentation with:
+- Project overview and features
+- Complete setup instructions
+- Deployment guides
+- UI feature highlights
 
 ## Why This Setup?
 
@@ -170,3 +255,37 @@ pip freeze | grep <package> >> requirements.txt
 - ✅ No confusion about which file to edit
 
 Simple is better!
+
+## UI/Brand Guidelines
+
+### Brand Name
+The project is called "5AM Founder" - targeting developers who ship at 5AM.
+
+### Design Philosophy
+- **Modern & Minimalistic**: Clean, uncluttered interfaces
+- **Dark by Default**: Optimized for developer eyestrain
+- **Glassmorphism**: Translucent UI elements with backdrop blur
+- **Gradient Accents**: Blue (#3B82F6) to Purple (#8B5CF6) for CTAs
+- **Professional**: No unnecessary animations or effects
+
+### Key UI Elements
+1. **Glass Cards**: `glass-card` class for translucent containers
+2. **Gradient Borders**: For primary CTAs and emphasis
+3. **Gradient Text**: For headlines and important text
+4. **Floating Backgrounds**: Subtle animated blur effects
+5. **Professional Avatars**: Diverse SVG representations
+6. **Terminal Preview**: Realistic command-line interface
+
+### Color Palette
+- **Background**: #0a0a0a (pure black)
+- **Primary Blue**: #3B82F6
+- **Purple Accent**: #8B5CF6
+- **Success Green**: #10B981
+- **Text Gray**: Various opacity levels of white
+
+### When Building Features
+- Always check `docs/styles.md` for existing patterns
+- Maintain consistency with the modern, professional aesthetic
+- Ensure all new components are mobile-responsive
+- Use the established animation library (no new animations)
+- Follow the typography hierarchy
