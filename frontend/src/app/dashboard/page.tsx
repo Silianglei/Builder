@@ -63,6 +63,12 @@ export default function DashboardPage() {
                 </svg>
                 <span>New Project</span>
               </Link>
+              <Link 
+                href="/settings" 
+                className="text-sm text-gray-400 hover:text-white transition-colors"
+              >
+                Settings
+              </Link>
               <button 
                 onClick={signOut} 
                 className="text-sm text-gray-400 hover:text-white transition-colors"

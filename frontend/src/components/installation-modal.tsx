@@ -15,13 +15,15 @@ interface InstallationModalProps {
   onClose: () => void
   onDelete: () => Promise<void>
   deleting?: boolean
+  deleteError?: string | null
 }
 
 export default function InstallationModal({ 
   repository, 
   onClose, 
   onDelete,
-  deleting = false 
+  deleting = false,
+  deleteError = null
 }: InstallationModalProps) {
   const [copied, setCopied] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -100,6 +102,13 @@ export default function InstallationModal({
               </div>
             </div>
           </div>
+
+          {/* Error Message */}
+          {deleteError && (
+            <div className="mt-4 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+              <p className="text-sm text-red-400 whitespace-pre-line">{deleteError}</p>
+            </div>
+          )}
 
           {/* Actions */}
           <div className="flex items-center justify-between pt-4">

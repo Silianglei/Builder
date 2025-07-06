@@ -92,7 +92,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     setLoading(true)
     try {
+      // Sign out from Supabase
       await supabase.auth.signOut()
+      
+      // Clear all local storage items related to auth
+      localStorage.removeItem('supabase.auth.token')
+      localStorage.removeItem('projectConfig')
+      localStorage.removeItem('redirectAfterAuth')
+      
+      // Clear all cookies (in case any are set)
+      document.cookie.split(";").forEach(function(c) { 
+        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+      })
+      
       setUser(null)
     } catch (error) {
       console.error('Error signing out:', error)
@@ -101,15 +113,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const signInWithGitHub = async () => {
+  const signInWithGitHub = async (forceReauth: boolean = false) => {
     setLoading(true)
     try {
+      // Clear any existing session data if forcing reauth
+      if (forceReauth) {
+        await supabase.auth.signOut()
+        localStorage.clear()
+        sessionStorage.clear()
+      }
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'github',
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
           skipBrowserRedirect: false,
-          scopes: 'repo read:org'
+          scopes: 'repo user read:org',
+          queryParams: forceReauth ? {
+            // Force GitHub to show the authorization page again
+            prompt: 'consent'
+          } : undefined
         }
       })
       

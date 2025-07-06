@@ -20,17 +20,32 @@ export default function RepositoryList({
 }: RepositoryListProps) {
   const [selectedRepository, setSelectedRepository] = useState<Repository | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   const handleDelete = async () => {
     if (!selectedRepository || !onDelete) return
     
     setDeleting(true)
+    setDeleteError(null)
     try {
       await onDelete(selectedRepository)
       setSelectedRepository(null)
       if (onRefresh) onRefresh()
     } catch (error) {
       console.error('Failed to delete repository:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete repository'
+      
+      // Check if it's a scope permission error
+      if (errorMessage.includes('delete_repo')) {
+        setDeleteError(
+          "Repository deletion requires additional permissions. To enable deletion, you'll need to:\n" +
+          "1. Update your Supabase GitHub OAuth settings to include 'delete_repo' scope\n" +
+          "2. Sign out and reconnect your GitHub account\n" +
+          "3. Grant the additional permission when prompted by GitHub"
+        )
+      } else {
+        setDeleteError(errorMessage)
+      }
     } finally {
       setDeleting(false)
     }
@@ -71,9 +86,13 @@ export default function RepositoryList({
 
       <InstallationModal
         repository={selectedRepository}
-        onClose={() => setSelectedRepository(null)}
+        onClose={() => {
+          setSelectedRepository(null)
+          setDeleteError(null)
+        }}
         onDelete={handleDelete}
         deleting={deleting}
+        deleteError={deleteError}
       />
     </>
   )

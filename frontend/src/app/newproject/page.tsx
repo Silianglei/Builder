@@ -4,6 +4,8 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
+import { getGitHubToken } from "@/lib/github"
+import { supabase } from "@/lib/supabase"
 import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react"
 
 // Step Components (we'll create these next)
@@ -68,6 +70,7 @@ export default function NewProjectPage() {
   const [currentStep, setCurrentStep] = useState(1)
   const [config, setConfig] = useState<ProjectConfig>(initialConfig)
   const [isCreating, setIsCreating] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   // Load saved config from localStorage if exists
   useEffect(() => {
@@ -109,17 +112,91 @@ export default function NewProjectPage() {
     }
 
     setIsCreating(true)
-    // TODO: Implement actual project creation API call
-    console.log('Creating project with config:', config)
+    setError(null)
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    
-    // Clear saved config
-    localStorage.removeItem('projectConfig')
-    
-    // Redirect to dashboard or project page
-    router.push('/dashboard')
+    try {
+      // Validate project name
+      if (!config.projectName || config.projectName.trim() === '') {
+        throw new Error('Please enter a project name')
+      }
+      
+      if (!/^[a-zA-Z0-9-_]+$/.test(config.projectName)) {
+        throw new Error('Project name can only contain letters, numbers, hyphens, and underscores')
+      }
+      
+      // Get GitHub token
+      const githubToken = await getGitHubToken()
+      
+      if (!githubToken) {
+        // User needs to re-authenticate with GitHub
+        console.log('No GitHub token found, re-authenticating...')
+        localStorage.setItem('redirectAfterAuth', '/newproject')
+        await signInWithGitHub()
+        return
+      }
+
+      // Get Supabase session for backend auth
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) {
+        throw new Error('No valid session found. Please sign in again.')
+      }
+
+      // Call backend API to create the repository
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/github/repositories`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+          'X-GitHub-Token': githubToken
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          name: config.projectName,
+          description: config.projectDescription || `Created with 5AM Founder - ${new Date().toLocaleDateString()}`,
+          private: config.isPrivate,
+          auto_init: config.initWithReadme,
+          tech_stack: config.techStack,
+          integrations: config.integrations
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        if (response.status === 422) {
+          throw new Error('A repository with this name already exists. Please choose a different name.')
+        } else if (response.status === 401) {
+          // Token might be expired, re-authenticate
+          console.log('GitHub token expired, re-authenticating...')
+          localStorage.setItem('redirectAfterAuth', '/newproject')
+          await signInWithGitHub()
+          return
+        } else if (response.status === 403) {
+          throw new Error('Insufficient permissions. Please make sure you have granted repository creation permissions.')
+        }
+        throw new Error(errorData.detail || 'Failed to create repository')
+      }
+
+      const repoData = await response.json()
+      console.log('Repository created successfully:', repoData)
+      
+      // Clear saved config
+      localStorage.removeItem('projectConfig')
+      
+      // Show success message
+      setError(null)
+      
+      // Open repository in new tab
+      window.open(repoData.html_url, '_blank')
+      
+      // Redirect to dashboard after a short delay
+      setTimeout(() => {
+        router.push('/dashboard')
+      }, 1000)
+    } catch (error) {
+      console.error('Error creating project:', error)
+      setError(error instanceof Error ? error.message : 'An unexpected error occurred')
+      setIsCreating(false)
+    }
   }
 
   const renderStep = () => {
@@ -203,6 +280,13 @@ export default function NewProjectPage() {
 
           {/* Step Indicator */}
           <StepIndicator currentStep={currentStep} totalSteps={4} />
+
+          {/* Error Message */}
+          {error && (
+            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+              <p className="text-sm text-red-400">{error}</p>
+            </div>
+          )}
 
           {/* Step Content */}
           <div className="mt-12 mb-8">
