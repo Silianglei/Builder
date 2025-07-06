@@ -104,16 +104,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signInWithGitHub = async () => {
     setLoading(true)
     try {
+      // Generate a unique state parameter for CSRF protection
+      const state = crypto.randomUUID ? crypto.randomUUID() : 
+                    Math.random().toString(36).substring(2, 15) + 
+                    Math.random().toString(36).substring(2, 15)
+      
+      // Store state in sessionStorage for verification
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('oauth_state', state)
+      }
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'github',
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
-          skipBrowserRedirect: false
+          skipBrowserRedirect: false,
+          queryParams: {
+            state: state
+          }
         }
       })
       
       if (error) {
         setLoading(false)
+        // Clear state on error
+        sessionStorage.removeItem('oauth_state')
         return { error: error.message }
       }
       
@@ -122,6 +137,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return {}
     } catch (error) {
       setLoading(false)
+      sessionStorage.removeItem('oauth_state')
       return { error: 'An unexpected error occurred' }
     }
   }
@@ -129,6 +145,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signInWithGoogle = async () => {
     setLoading(true)
     try {
+      // Generate a unique state parameter for CSRF protection
+      const state = crypto.randomUUID ? crypto.randomUUID() : 
+                    Math.random().toString(36).substring(2, 15) + 
+                    Math.random().toString(36).substring(2, 15)
+      
+      // Store state in sessionStorage for verification
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('oauth_state', state)
+      }
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -136,13 +162,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           skipBrowserRedirect: false,
           queryParams: {
             access_type: 'offline',
-            prompt: 'consent'
+            prompt: 'consent',
+            state: state
           }
         }
       })
       
       if (error) {
         setLoading(false)
+        // Clear state on error
+        sessionStorage.removeItem('oauth_state')
         return { error: error.message }
       }
       
@@ -151,6 +180,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return {}
     } catch (error) {
       setLoading(false)
+      sessionStorage.removeItem('oauth_state')
       return { error: 'An unexpected error occurred' }
     }
   }

@@ -1,11 +1,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from dotenv import load_dotenv
 import logging
 
 from .config import get_settings
 from .routers import auth, users
 from .db.supabase_client import get_supabase_client
+from .middleware import SecurityHeadersMiddleware, RateLimitMiddleware
 
 # Load environment variables
 load_dotenv()
@@ -15,16 +17,32 @@ settings = get_settings()
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version="1.0.0",
-    description="Template FastAPI backend with Supabase integration"
+    description="Template FastAPI backend with Supabase integration",
+    docs_url="/docs" if settings.ENVIRONMENT == "development" else None,  # Disable docs in production
+    redoc_url="/redoc" if settings.ENVIRONMENT == "development" else None,
 )
 
-# Configure CORS
+# Add security middleware
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(RateLimitMiddleware, calls=100, period=60)
+
+# Add trusted host middleware (prevents host header attacks)
+if settings.ENVIRONMENT == "production":
+    # Add your production domains here
+    app.add_middleware(
+        TrustedHostMiddleware,
+        allowed_hosts=["*.yourdomain.com", "yourdomain.com"]
+    )
+
+# Configure CORS with tighter settings
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.get_cors_origins(),
+    allow_origins=settings.get_cors_origins(),  # Specific origins only
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],  # Specific methods
+    allow_headers=["Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With"],  # Specific headers
+    expose_headers=["X-RateLimit-Limit", "X-RateLimit-Remaining", "X-RateLimit-Reset"],
+    max_age=86400,  # Cache preflight requests for 24 hours
 )
 
 # Include routers

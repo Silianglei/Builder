@@ -2,21 +2,54 @@ from fastapi import HTTPException, Depends, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import jwt
 from typing import Optional, Dict, Any
+import httpx
+import json
+from functools import lru_cache
 from ..config import get_settings
 from ..db.supabase_client import get_supabase_client
 
 settings = get_settings()
 security = HTTPBearer()
 
+@lru_cache(maxsize=1)
+async def get_supabase_jwt_secret() -> str:
+    """Get the JWT secret from Supabase for token verification."""
+    # For production, use the JWT secret from your Supabase dashboard
+    # You can find it in Settings > API > JWT Settings
+    # Store it as an environment variable
+    jwt_secret = settings.JWT_SECRET_KEY
+    if not jwt_secret or jwt_secret == "your-jwt-secret-key":
+        # In development, we can fetch the public key from Supabase
+        # In production, always use the configured secret
+        raise ValueError(
+            "JWT_SECRET_KEY not configured. "
+            "Get it from Supabase Dashboard > Settings > API > JWT Secret"
+        )
+    return jwt_secret
+
 async def verify_jwt_token(token: str) -> Optional[Dict[str, Any]]:
     """Verify JWT token and return payload."""
     try:
-        # For Supabase JWT tokens, we can verify them directly
-        # In production, you should verify the signature properly
+        # Get the JWT secret for verification
+        jwt_secret = await get_supabase_jwt_secret()
+        
+        # Verify the token with the secret
         payload = jwt.decode(
-            token, 
-            options={"verify_signature": False}  # Disable for now - configure properly in production
+            token,
+            jwt_secret,
+            algorithms=["HS256"],
+            audience="authenticated",
+            options={
+                "verify_signature": True,
+                "verify_aud": True,
+                "verify_exp": True
+            }
         )
+        
+        # Additional validation for Supabase tokens
+        if not payload.get("sub"):
+            raise jwt.InvalidTokenError("Missing subject in token")
+            
         return payload
     except jwt.ExpiredSignatureError:
         raise HTTPException(
@@ -24,10 +57,16 @@ async def verify_jwt_token(token: str) -> Optional[Dict[str, Any]]:
             detail="Token has expired",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    except jwt.InvalidTokenError:
+    except jwt.InvalidTokenError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token",
+            detail=f"Invalid token: {str(e)}",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token verification failed",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
