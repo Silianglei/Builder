@@ -21,7 +21,6 @@ export default function AuthCallback() {
       const errorParam = searchParams.get('error')
       const errorDescription = searchParams.get('error_description')
       const errorCode = searchParams.get('error_code')
-      const stateParam = searchParams.get('state')
 
       if (errorParam) {
         let errorMessage = 'Authentication failed'
@@ -46,32 +45,11 @@ export default function AuthCallback() {
         console.error('OAuth callback error:', { errorParam, errorDescription, errorCode })
         setError(errorMessage)
         
-        // Clear stored state
-        sessionStorage.removeItem('oauth_state')
-        
         // Redirect to auth page with error after a delay
         setTimeout(() => {
           router.push(`/auth?error=${encodeURIComponent(errorMessage)}`)
         }, 3000)
         return
-      }
-
-      // Verify CSRF state parameter
-      if (stateParam) {
-        const storedState = sessionStorage.getItem('oauth_state')
-        sessionStorage.removeItem('oauth_state') // Clear it immediately
-        
-        if (!storedState || storedState !== stateParam) {
-          console.error('State mismatch - possible CSRF attack', { 
-            stored: storedState, 
-            received: stateParam 
-          })
-          setError('Security verification failed. Please try signing in again.')
-          setTimeout(() => {
-            router.push('/auth?error=Security+verification+failed')
-          }, 3000)
-          return
-        }
       }
 
       // For successful OAuth, let the AuthProvider handle the session

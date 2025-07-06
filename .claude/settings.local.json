@@ -10,7 +10,9 @@
       "Bash(npm run build:*)",
       "Bash(make:*)",
       "Bash(docker-compose:*)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "mcp__supabase__list_projects",
+      "mcp__supabase__list_tables"
     ],
     "deny": []
   }

@@ -18,9 +18,9 @@ This checklist ensures your Google OAuth implementation is secure and production
 - [x] Referrer-Policy: strict-origin-when-cross-origin
 
 ### 3. **CSRF Protection** ✅
-- [x] OAuth state parameter implemented
-- [x] State verification in callback
-- [x] Session storage for state tracking
+- [x] Supabase handles OAuth state parameter internally
+- [x] CSRF protection built into Supabase Auth
+- [x] No custom state handling needed
 
 ### 4. **Rate Limiting** ✅
 - [x] Global rate limit: 100 requests/minute
