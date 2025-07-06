@@ -23,7 +23,15 @@ export default function GitHubTest() {
       const githubToken = await getGitHubToken()
       
       if (!githubToken) {
-        throw new Error('GitHub token not found. Please sign in with GitHub.')
+        // If no token, user might need to re-authenticate
+        setError('GitHub token not found. Please sign in with GitHub again.')
+        
+        // Offer to re-authenticate
+        const shouldReauth = confirm('GitHub authentication token not found. Would you like to sign in with GitHub again?')
+        if (shouldReauth) {
+          await signInWithGitHub()
+        }
+        return
       }
 
       // Get the Supabase session for API auth
@@ -33,6 +41,15 @@ export default function GitHubTest() {
       if (!session?.access_token) {
         throw new Error('Not authenticated. Please sign in.')
       }
+
+      // Log request details for debugging
+      console.log('Making GitHub test request:', {
+        url: `${process.env.NEXT_PUBLIC_API_URL}/api/v1/github/test-access`,
+        headers: {
+          'Authorization': `Bearer ${session.access_token.substring(0, 20)}...`,
+          'X-GitHub-Token': `${githubToken.substring(0, 20)}...`
+        }
+      })
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/github/test-access`, {
         method: 'GET',
@@ -46,6 +63,11 @@ export default function GitHubTest() {
 
       if (!response.ok) {
         const errorData = await response.json()
+        console.error('GitHub test failed:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData
+        })
         throw new Error(errorData.detail || 'Failed to test GitHub access')
       }
 
@@ -199,6 +221,21 @@ export default function GitHubTest() {
               Re-authenticate with GitHub
             </button>
           )}
+        </div>
+      )}
+
+      {/* GitHub Auth Info */}
+      {!testResult && !error && !loading && (
+        <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4 text-sm">
+          <p className="text-blue-400 mb-2">ℹ️ GitHub Integration Info</p>
+          <p className="text-gray-300">
+            To use GitHub features, ensure:
+          </p>
+          <ol className="list-decimal list-inside text-gray-400 mt-2 space-y-1">
+            <li>You signed in with GitHub (not email/password)</li>
+            <li>Supabase is configured to return provider tokens</li>
+            <li>You granted repository permissions during sign-in</li>
+          </ol>
         </div>
       )}
     </div>

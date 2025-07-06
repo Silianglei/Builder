@@ -3,7 +3,6 @@ from github import Github, GithubException
 from typing import Dict, List, Optional, Any
 from pydantic import BaseModel
 
-from ..models.user import User
 from ..auth.auth import get_current_user
 
 router = APIRouter(prefix="/api/v1/github", tags=["github"])
@@ -27,10 +26,16 @@ class RepositoryResponse(BaseModel):
     description: Optional[str] = None
 
 
+@router.get("/health")
+async def github_health_check() -> Dict[str, str]:
+    """Simple health check endpoint that doesn't require auth"""
+    return {"status": "ok", "service": "github"}
+
+
 @router.get("/test-access")
 async def test_github_access(
     request: Request,
-    current_user: User = Depends(get_current_user)
+    current_user: Dict = Depends(get_current_user)
 ) -> Dict[str, Any]:
     """Test if we have GitHub access with the user's token"""
     # Get the provider token from the request headers
@@ -90,7 +95,7 @@ async def test_github_access(
 async def create_repository(
     request: Request,
     repo_data: CreateRepositoryRequest,
-    current_user: User = Depends(get_current_user)
+    current_user: Dict = Depends(get_current_user)
 ) -> RepositoryResponse:
     """Create a new GitHub repository with a simple boilerplate"""
     auth_header = request.headers.get("X-GitHub-Token")
@@ -194,7 +199,7 @@ MIT
 @router.get("/repositories")
 async def list_repositories(
     request: Request,
-    current_user: User = Depends(get_current_user)
+    current_user: Dict = Depends(get_current_user)
 ) -> List[RepositoryResponse]:
     """List user's GitHub repositories"""
     auth_header = request.headers.get("X-GitHub-Token")
