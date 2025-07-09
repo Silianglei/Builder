@@ -1,0 +1,19 @@
+<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="80" height="80" rx="40" fill="url(#gradient5)"/>
+  <path d="M40 36C44.4183 36 48 32.4183 48 28C48 23.5817 44.4183 20 40 20C35.5817 20 32 23.5817 32 28C32 32.4183 35.5817 36 40 36Z" fill="#FEC89A"/>
+  <path d="M40 36C39.2 36 38.4 35.8667 37.6667 35.6C36.5333 37.3333 35.3333 39.3333 35.3333 41.3333V44H44.6667V41.3333C44.6667 39.3333 43.4667 37.3333 42.3333 35.6C41.6 35.8667 40.8 36 40 36Z" fill="#FDB462"/>
+  <path d="M52 60C52 52.2667 46.6 46 40 46C33.4 46 28 52.2667 28 60H52Z" fill="#EC4899"/>
+  <path d="M40 24C40 24 35 16 35 14C35 12 36 10 38 10C40 10 42 10 42 10C42 10 44 10 42 12C40 14 40 24 40 24Z" fill="#7C2D12"/>
+  <path d="M35 24C35 24 33 22 31 22C29 22 28 23 28 24C28 25 29 26 30 26C31 26 32 25.5 33 25C34 24.5 35 24 35 24Z" fill="#7C2D12"/>
+  <path d="M45 24C45 24 47 22 49 22C51 22 52 23 52 24C52 25 51 26 50 26C49 26 48 25.5 47 25C46 24.5 45 24 45 24Z" fill="#7C2D12"/>
+  <circle cx="36" cy="28" r="1" fill="#1F2937"/>
+  <circle cx="44" cy="28" r="1" fill="#1F2937"/>
+  <path d="M40 37C40 37 36 40 36 42H44C44 40 40 37 40 37Z" fill="#FFF"/>
+  <path d="M36 42H44" stroke="#E5E7EB" stroke-width="0.5"/>
+  <defs>
+    <linearGradient id="gradient5" x1="0" y1="0" x2="80" y2="80" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FCE7F3"/>
+      <stop offset="1" stop-color="#FBCFE8"/>
+    </linearGradient>
+  </defs>
+</svg>
