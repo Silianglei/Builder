@@ -9,6 +9,28 @@ This file provides guidance to Claude Code (claude.ai/code) when working with th
 2. Allowing selection of tech stack components
 3. Automatically generating a customized, production-ready codebase
 
+## Workflow with Claude
+
+### Documentation Structure
+- **`docs/master.md`** - Living document tracking project evolution, implementation history, and upcoming features
+- **`docs/workers/`** - Used only for drafting feature descriptions before feeding to Claude
+
+### Working Process
+1. **Feature Planning**: User drafts feature descriptions in workers directory
+2. **Implementation**: Claude implements features based on provided descriptions
+3. **Documentation**: Claude updates `master.md` after completing features or rollbacks
+   - Only update after significant changes (feature additions, major modifications, rollbacks)
+   - Do NOT update on every message or minor change
+   - Include implementation history and what's coming next
+
+### Master.md Structure
+The `master.md` file should maintain:
+- **Project Vision**: Overall goals and direction
+- **Implementation History**: Chronological record of major changes
+- **Current State**: What features exist and how they work
+- **Upcoming Features**: What's planned next
+- **Technical Decisions**: Key architectural choices and rationale
+
 ## Quick Start
 
 ```bash

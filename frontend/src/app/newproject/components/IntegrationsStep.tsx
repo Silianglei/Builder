@@ -1,7 +1,6 @@
-import { useState } from "react"
-import { Shield, CreditCard, Database, Mail, BarChart3 } from "lucide-react"
+import React from 'react'
+import { Shield, Database, CreditCard, Github, Chrome, Mail } from "lucide-react"
 import { ProjectConfig } from "../page"
-import IntegrationCard from "./IntegrationCard"
 
 interface IntegrationsStepProps {
   config: ProjectConfig
@@ -24,96 +23,227 @@ export default function IntegrationsStep({ config, updateConfig }: IntegrationsS
   }
 
   return (
-    <div className="space-y-8">
-      {/* Core Features */}
-      <div className="space-y-3">
-        <IntegrationCard
-          name="Authentication"
-          description="User accounts, OAuth, and secure sessions"
-          icon={<Shield className="w-5 h-5" />}
-          selected={config.integrations.supabaseAuth}
-          onClick={() => updateIntegrations({ supabaseAuth: !config.integrations.supabaseAuth })}
-          badge="Essential"
-        />
-
-        {/* OAuth Providers - Show inline when auth is selected */}
-        {config.integrations.supabaseAuth && (
-          <div className="ml-16 space-y-3">
-            <p className="text-xs text-gray-400 mb-2">OAuth Providers</p>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                { id: 'github', name: 'GitHub' },
-                { id: 'google', name: 'Google' },
-              ].map((provider) => (
-                <button
-                  key={provider.id}
-                  onClick={() => toggleAuthProvider(provider.id)}
-                  className={`px-3 py-2 text-sm rounded-md border transition-all ${
-                    config.integrations.supabaseAuthProviders?.includes(provider.id)
-                      ? 'border-blue-500/50 bg-blue-500/10 text-blue-400'
-                      : 'border-white/10 hover:border-white/20 text-gray-400'
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Authentication Box */}
+      <div className="relative group">
+        <div className={`h-full rounded-xl border transition-all duration-300 ${
+          config.integrations.supabaseAuth 
+            ? 'border-blue-500/50 bg-gradient-to-b from-blue-500/10 to-transparent' 
+            : 'border-white/10 bg-white/5 hover:border-white/20'
+        }`}>
+          {/* Header with Toggle */}
+          <div className="p-6 border-b border-white/10">
+            <div className="flex items-start justify-between mb-2">
+              <div className="flex items-center space-x-3">
+                <div className={`p-2 rounded-lg ${
+                  config.integrations.supabaseAuth ? 'bg-blue-500/20' : 'bg-white/10'
+                }`}>
+                  <Shield className={`w-5 h-5 ${
+                    config.integrations.supabaseAuth ? 'text-blue-400' : 'text-gray-400'
+                  }`} />
+                </div>
+                <div>
+                  <h3 className="font-medium">Authentication</h3>
+                  <p className="text-xs text-gray-400 mt-0.5">User accounts & sessions</p>
+                </div>
+              </div>
+              {/* Toggle Switch */}
+              <button
+                onClick={() => updateIntegrations({ supabaseAuth: !config.integrations.supabaseAuth })}
+                className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-black"
+                style={{ backgroundColor: config.integrations.supabaseAuth ? '#3B82F6' : 'rgba(255,255,255,0.1)' }}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    config.integrations.supabaseAuth ? 'translate-x-6' : 'translate-x-1'
                   }`}
-                >
-                  {provider.name}
-                </button>
-              ))}
+                />
+              </button>
             </div>
           </div>
-        )}
 
-        <IntegrationCard
-          name="Database"
-          description="PostgreSQL with real-time subscriptions"
-          icon={<Database className="w-5 h-5" />}
-          selected={config.integrations.database === 'supabase'}
-          onClick={() => updateIntegrations({ 
-            database: config.integrations.database === 'supabase' ? 'none' : 'supabase' 
-          })}
-          badge="Essential"
-        />
+          {/* Auth Providers */}
+          <div className={`p-6 space-y-3 transition-all duration-300 ${
+            config.integrations.supabaseAuth ? 'opacity-100' : 'opacity-30 pointer-events-none'
+          }`}>
+            <p className="text-xs text-gray-500 uppercase tracking-wider mb-4">Sign-in methods</p>
+            
+            {/* GitHub */}
+            <label className="flex items-center justify-between py-2 cursor-pointer group/item">
+              <div className="flex items-center space-x-3">
+                <Github className="w-5 h-5 text-gray-400" />
+                <span className="text-sm">GitHub</span>
+              </div>
+              <input
+                type="checkbox"
+                checked={config.integrations.supabaseAuthProviders?.includes('github')}
+                onChange={() => toggleAuthProvider('github')}
+                disabled={!config.integrations.supabaseAuth}
+                className="w-4 h-4 rounded border-gray-600 bg-gray-800 text-blue-500 focus:ring-blue-500 focus:ring-offset-0"
+              />
+            </label>
 
-        <IntegrationCard
-          name="Payments"
-          description="Stripe integration for subscriptions"
-          icon={<CreditCard className="w-5 h-5" />}
-          selected={config.integrations.stripe}
-          onClick={() => updateIntegrations({ stripe: !config.integrations.stripe })}
-        />
-      </div>
+            {/* Google */}
+            <label className="flex items-center justify-between py-2 cursor-pointer group/item">
+              <div className="flex items-center space-x-3">
+                <Chrome className="w-5 h-5 text-gray-400" />
+                <span className="text-sm">Google</span>
+              </div>
+              <input
+                type="checkbox"
+                checked={config.integrations.supabaseAuthProviders?.includes('google')}
+                onChange={() => toggleAuthProvider('google')}
+                disabled={!config.integrations.supabaseAuth}
+                className="w-4 h-4 rounded border-gray-600 bg-gray-800 text-blue-500 focus:ring-blue-500 focus:ring-offset-0"
+              />
+            </label>
 
-      {/* Optional Features */}
-      <div>
-        <p className="text-sm text-gray-400 mb-3">Optional</p>
-        <div className="space-y-3">
-          <IntegrationCard
-            name="Email"
-            description="Send transactional emails"
-            icon={<Mail className="w-5 h-5" />}
-            selected={config.integrations.email !== 'none'}
-            onClick={() => updateIntegrations({ 
-              email: config.integrations.email === 'none' ? 'resend' : 'none' 
-            })}
-            compact
-          />
-
-          <IntegrationCard
-            name="Analytics"
-            description="Track user behavior and metrics"
-            icon={<BarChart3 className="w-5 h-5" />}
-            selected={config.integrations.analytics !== 'none'}
-            onClick={() => updateIntegrations({ 
-              analytics: config.integrations.analytics === 'none' ? 'posthog' : 'none' 
-            })}
-            compact
-          />
+            {/* Email */}
+            <label className="flex items-center justify-between py-2 cursor-pointer group/item">
+              <div className="flex items-center space-x-3">
+                <Mail className="w-5 h-5 text-gray-400" />
+                <span className="text-sm">Email/Password</span>
+              </div>
+              <input
+                type="checkbox"
+                checked={config.integrations.supabaseAuthProviders?.includes('email')}
+                onChange={() => toggleAuthProvider('email')}
+                disabled={!config.integrations.supabaseAuth}
+                className="w-4 h-4 rounded border-gray-600 bg-gray-800 text-blue-500 focus:ring-blue-500 focus:ring-offset-0"
+              />
+            </label>
+          </div>
         </div>
       </div>
 
-      {/* Quick tip */}
-      <div className="mt-8 p-4 bg-blue-500/5 border border-blue-500/20 rounded-lg">
-        <p className="text-xs text-blue-400">
-          💡 Start with essentials. You can always add more integrations later.
-        </p>
+      {/* Database Box */}
+      <div className="relative group">
+        <div className={`h-full rounded-xl border transition-all duration-300 ${
+          config.integrations.database === 'supabase' 
+            ? 'border-emerald-500/50 bg-gradient-to-b from-emerald-500/10 to-transparent' 
+            : 'border-white/10 bg-white/5 hover:border-white/20'
+        }`}>
+          {/* Header with Toggle */}
+          <div className="p-6 border-b border-white/10">
+            <div className="flex items-start justify-between mb-2">
+              <div className="flex items-center space-x-3">
+                <div className={`p-2 rounded-lg ${
+                  config.integrations.database === 'supabase' ? 'bg-emerald-500/20' : 'bg-white/10'
+                }`}>
+                  <Database className={`w-5 h-5 ${
+                    config.integrations.database === 'supabase' ? 'text-emerald-400' : 'text-gray-400'
+                  }`} />
+                </div>
+                <div>
+                  <h3 className="font-medium">Database</h3>
+                  <p className="text-xs text-gray-400 mt-0.5">PostgreSQL with real-time</p>
+                </div>
+              </div>
+              {/* Toggle Switch */}
+              <button
+                onClick={() => updateIntegrations({ 
+                  database: config.integrations.database === 'supabase' ? 'none' : 'supabase' 
+                })}
+                className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-black"
+                style={{ backgroundColor: config.integrations.database === 'supabase' ? '#10B981' : 'rgba(255,255,255,0.1)' }}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    config.integrations.database === 'supabase' ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
+
+          {/* Database Features */}
+          <div className={`p-6 space-y-3 transition-all duration-300 ${
+            config.integrations.database === 'supabase' ? 'opacity-100' : 'opacity-30'
+          }`}>
+            <div className="space-y-3 text-sm text-gray-400">
+              <div className="flex items-center space-x-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
+                <span>Instant PostgreSQL database</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
+                <span>Real-time subscriptions</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
+                <span>Row level security</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
+                <span>Auto-generated APIs</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Payments Box */}
+      <div className="relative group">
+        <div className={`h-full rounded-xl border transition-all duration-300 ${
+          config.integrations.stripe 
+            ? 'border-purple-500/50 bg-gradient-to-b from-purple-500/10 to-transparent' 
+            : 'border-white/10 bg-white/5 hover:border-white/20'
+        }`}>
+          {/* Header with Toggle */}
+          <div className="p-6 border-b border-white/10">
+            <div className="flex items-start justify-between mb-2">
+              <div className="flex items-center space-x-3">
+                <div className={`p-2 rounded-lg ${
+                  config.integrations.stripe ? 'bg-purple-500/20' : 'bg-white/10'
+                }`}>
+                  <CreditCard className={`w-5 h-5 ${
+                    config.integrations.stripe ? 'text-purple-400' : 'text-gray-400'
+                  }`} />
+                </div>
+                <div>
+                  <h3 className="font-medium">Payments</h3>
+                  <p className="text-xs text-gray-400 mt-0.5">Stripe subscriptions</p>
+                </div>
+              </div>
+              {/* Toggle Switch */}
+              <button
+                onClick={() => updateIntegrations({ stripe: !config.integrations.stripe })}
+                className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-black"
+                style={{ backgroundColor: config.integrations.stripe ? '#8B5CF6' : 'rgba(255,255,255,0.1)' }}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    config.integrations.stripe ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
+
+          {/* Payment Features */}
+          <div className={`p-6 space-y-3 transition-all duration-300 ${
+            config.integrations.stripe ? 'opacity-100' : 'opacity-30'
+          }`}>
+            <div className="space-y-3 text-sm text-gray-400">
+              <div className="flex items-center space-x-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-purple-400"></div>
+                <span>Subscription management</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-purple-400"></div>
+                <span>Customer portal</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-purple-400"></div>
+                <span>Webhook handlers</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-purple-400"></div>
+                <span>Usage-based billing</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )

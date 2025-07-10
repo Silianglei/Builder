@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
@@ -12,7 +12,6 @@ import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react"
 import StepIndicator from "./components/StepIndicator"
 import ProjectDetailsStep from "./components/ProjectDetailsStep"
 import IntegrationsStep from "./components/IntegrationsStep"
-import TechStackStep from "./components/TechStackStep"
 import ReviewStep from "./components/ReviewStep"
 
 export interface ProjectConfig {
@@ -90,7 +89,7 @@ export default function NewProjectPage() {
   }
 
   const handleNext = () => {
-    if (currentStep < 4) {
+    if (currentStep < 3) {
       setCurrentStep(prev => prev + 1)
     }
   }
@@ -199,6 +198,21 @@ export default function NewProjectPage() {
     }
   }
 
+  // Set tech stack defaults when reaching step 3
+  useEffect(() => {
+    if (currentStep === 3) {
+      updateConfig({
+        techStack: {
+          frontend: 'nextjs15',
+          styling: 'tailwind',
+          typescript: true,
+          docker: true,
+          testing: 'jest'
+        }
+      })
+    }
+  }, [currentStep])
+
   const renderStep = () => {
     switch (currentStep) {
       case 1:
@@ -206,9 +220,7 @@ export default function NewProjectPage() {
       case 2:
         return <IntegrationsStep config={config} updateConfig={updateConfig} />
       case 3:
-        return <TechStackStep config={config} updateConfig={updateConfig} />
-      case 4:
-        return <ReviewStep config={config} user={user} />
+        return <ReviewStep config={config} user={user} onEdit={(step) => setCurrentStep(step)} />
       default:
         return null
     }
@@ -267,7 +279,7 @@ export default function NewProjectPage() {
 
       {/* Main Content */}
       <main className="relative px-6 pt-24 pb-20">
-        <div className="max-w-3xl mx-auto">
+        <div className="max-w-5xl mx-auto">
           {/* Header */}
           <div className="text-center mb-10">
             <h1 className="text-3xl sm:text-4xl font-bold mb-3">
@@ -279,7 +291,7 @@ export default function NewProjectPage() {
           </div>
 
           {/* Step Indicator */}
-          <StepIndicator currentStep={currentStep} totalSteps={4} />
+          <StepIndicator currentStep={currentStep} totalSteps={3} />
 
           {/* Error Message */}
           {error && (
@@ -308,7 +320,7 @@ export default function NewProjectPage() {
               <span>Back</span>
             </button>
 
-            {currentStep < 4 ? (
+            {currentStep < 3 ? (
               <button
                 onClick={handleNext}
                 className="flex items-center space-x-2 px-6 py-2.5 bg-white text-black rounded-lg font-medium hover:bg-gray-100 transition-all"

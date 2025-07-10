@@ -775,6 +775,115 @@ className="fixed top-0 w-full z-50 px-6 py-4 bg-[#0a0a0a]/80 backdrop-blur-xl bo
 </svg>
 ```
 
+## Feature Selection Cards (New)
+
+### 3-Column Grid Layout
+```tsx
+<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+  {/* Feature boxes */}
+</div>
+```
+
+### Feature Box with Toggle
+```tsx
+<div className={`h-full rounded-xl border transition-all duration-300 ${
+  isActive 
+    ? 'border-blue-500/50 bg-gradient-to-b from-blue-500/10 to-transparent' 
+    : 'border-white/10 bg-white/5 hover:border-white/20'
+}`}>
+  {/* Box content */}
+</div>
+```
+
+### Custom Toggle Switch
+```tsx
+<button
+  onClick={() => toggle()}
+  className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-black"
+  style={{ backgroundColor: isActive ? '#3B82F6' : 'rgba(255,255,255,0.1)' }}
+>
+  <span
+    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+      isActive ? 'translate-x-6' : 'translate-x-1'
+    }`}
+  />
+</button>
+```
+
+### Feature Box Header
+```tsx
+<div className="p-6 border-b border-white/10">
+  <div className="flex items-start justify-between mb-2">
+    <div className="flex items-center space-x-3">
+      <div className={`p-2 rounded-lg ${
+        isActive ? 'bg-blue-500/20' : 'bg-white/10'
+      }`}>
+        <Icon className={`w-5 h-5 ${
+          isActive ? 'text-blue-400' : 'text-gray-400'
+        }`} />
+      </div>
+      <div>
+        <h3 className="font-medium">Feature Name</h3>
+        <p className="text-xs text-gray-400 mt-0.5">Feature description</p>
+      </div>
+    </div>
+    {/* Toggle switch */}
+  </div>
+</div>
+```
+
+### Feature Color Themes
+```tsx
+// Authentication - Blue theme
+border-blue-500/50
+bg-gradient-to-b from-blue-500/10 to-transparent
+bg-blue-500/20
+text-blue-400
+focus:ring-blue-500
+
+// Database - Emerald theme  
+border-emerald-500/50
+bg-gradient-to-b from-emerald-500/10 to-transparent
+bg-emerald-500/20
+text-emerald-400
+focus:ring-emerald-500
+
+// Payments - Purple theme
+border-purple-500/50
+bg-gradient-to-b from-purple-500/10 to-transparent
+bg-purple-500/20
+text-purple-400
+focus:ring-purple-500
+```
+
+### Native Checkbox Styling
+```tsx
+<input
+  type="checkbox"
+  checked={isChecked}
+  onChange={handleChange}
+  disabled={isDisabled}
+  className="w-4 h-4 rounded border-gray-600 bg-gray-800 text-blue-500 focus:ring-blue-500 focus:ring-offset-0"
+/>
+```
+
+### Feature List Items
+```tsx
+<div className="flex items-center space-x-2">
+  <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
+  <span>Feature description</span>
+</div>
+```
+
+### Disabled State Transitions
+```tsx
+<div className={`p-6 space-y-3 transition-all duration-300 ${
+  isEnabled ? 'opacity-100' : 'opacity-30 pointer-events-none'
+}`}>
+  {/* Content */}
+</div>
+```
+
 ## Tailwind Configuration
 
 Key extensions to include in `tailwind.config.ts`:

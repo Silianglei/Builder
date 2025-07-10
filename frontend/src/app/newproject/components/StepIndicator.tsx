@@ -6,7 +6,6 @@ interface StepIndicatorProps {
 const stepTitles = [
   "Details",
   "Features",
-  "Stack",
   "Review"
 ]
 
