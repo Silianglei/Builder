@@ -5,8 +5,9 @@ import { useAuth } from '@/hooks/useAuth'
 import { useRepositories } from '@/hooks/useRepositories'
 import RepositoryList from '@/components/repository-list'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useState, useRef, useEffect } from 'react'
-import { ChevronDown, Settings, LogOut, User, Plus, RefreshCcw } from 'lucide-react'
+import { ChevronDown, Settings, LogOut, User, Plus } from 'lucide-react'
 
 // UserDropdown Component
 function UserDropdown({ user, signOut }: { user: any; signOut: () => void }) {
@@ -78,6 +79,46 @@ function UserDropdown({ user, signOut }: { user: any; signOut: () => void }) {
 export default function DashboardPage() {
   const { user, signOut } = useAuth()
   const { repositories, loading, error, refresh, deleteRepository } = useRepositories()
+  const router = useRouter()
+  
+  // Check for redirect after auth or if we need to refresh
+  useEffect(() => {
+    // Check if we're coming from auth
+    const urlParams = new URLSearchParams(window.location.search)
+    const fromAuth = urlParams.get('from_auth')
+    const shouldRefresh = urlParams.get('refresh')
+    
+    if (fromAuth) {
+      // Remove the query parameter
+      urlParams.delete('from_auth')
+      const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '')
+      window.history.replaceState({}, '', newUrl)
+      
+      // Check for saved redirect
+      const redirectAfterAuth = localStorage.getItem('redirectAfterAuth')
+      if (redirectAfterAuth) {
+        console.log('Found redirect after auth:', redirectAfterAuth)
+        localStorage.removeItem('redirectAfterAuth')
+        
+        // Small delay to ensure session is fully established
+        setTimeout(() => {
+          router.push(redirectAfterAuth)
+        }, 100)
+      }
+    }
+    
+    // Force refresh if requested
+    if (shouldRefresh === 'true') {
+      urlParams.delete('refresh')
+      const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '')
+      window.history.replaceState({}, '', newUrl)
+      
+      // Refresh repositories after a small delay
+      setTimeout(() => {
+        refresh()
+      }, 500)
+    }
+  }, [router, refresh])
   
   // Filter only 5AM Founder repositories
   const filteredRepos = repositories
@@ -201,14 +242,6 @@ export default function DashboardPage() {
                     }
                   </p>
                 </div>
-                <button
-                  onClick={refresh}
-                  disabled={loading}
-                  className="group flex items-center space-x-2 px-5 py-2.5 rounded-xl bg-white/[0.02] border border-white/[0.05] text-sm font-medium transition-all hover:bg-white/[0.05] hover:border-white/[0.1] disabled:opacity-50"
-                >
-                  <RefreshCcw className={`w-4 h-4 transition-transform group-hover:rotate-180 duration-500 ${loading ? 'animate-spin' : ''}`} />
-                  <span>Refresh</span>
-                </button>
               </div>
               
               {error ? (

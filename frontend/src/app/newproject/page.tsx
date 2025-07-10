@@ -70,19 +70,68 @@ export default function NewProjectPage() {
   const [config, setConfig] = useState<ProjectConfig>(initialConfig)
   const [isCreating, setIsCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [shouldAutoCreate, setShouldAutoCreate] = useState(false)
+  const [hasLoadedConfig, setHasLoadedConfig] = useState(false)
+  const [isLoadingFromStorage, setIsLoadingFromStorage] = useState(true)
 
   // Load saved config from localStorage if exists
   useEffect(() => {
     const savedConfig = localStorage.getItem('projectConfig')
-    if (savedConfig) {
-      setConfig(JSON.parse(savedConfig))
+    console.log('Loading config from localStorage:', savedConfig)
+    if (savedConfig && !hasLoadedConfig) {
+      const parsedConfig = JSON.parse(savedConfig)
+      console.log('Parsed config:', parsedConfig)
+      setIsLoadingFromStorage(true)
+      setConfig(parsedConfig)
+      setHasLoadedConfig(true)
+      // Allow saving after a brief delay
+      setTimeout(() => setIsLoadingFromStorage(false), 100)
+      
+      // Check if we have a complete config (user went through all steps)
+      if (parsedConfig.projectName && parsedConfig.projectName.trim() !== '') {
+        // Jump to review step if we have a saved config
+        setCurrentStep(3)
+        
+        // Check if we're coming back from auth
+        const urlParams = new URLSearchParams(window.location.search)
+        const fromAuth = urlParams.get('from_auth')
+        
+        // If user just authenticated and we have a valid config, mark for auto-create
+        if (user && fromAuth === 'true') {
+          setShouldAutoCreate(true)
+          
+          // Clean up the URL
+          urlParams.delete('from_auth')
+          const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '')
+          window.history.replaceState({}, '', newUrl)
+        }
+      }
+    } else {
+      // No saved config, we can start saving immediately
+      setIsLoadingFromStorage(false)
     }
-  }, [])
+  }, [user, hasLoadedConfig])
 
   // Save config to localStorage on changes
   useEffect(() => {
-    localStorage.setItem('projectConfig', JSON.stringify(config))
-  }, [config])
+    // Only save if we're not currently loading from storage
+    // This prevents re-saving the config we just loaded
+    if (!isLoadingFromStorage) {
+      localStorage.setItem('projectConfig', JSON.stringify(config))
+    }
+  }, [config, isLoadingFromStorage])
+
+  // Auto-create project after authentication
+  useEffect(() => {
+    if (shouldAutoCreate && user && !isCreating) {
+      setShouldAutoCreate(false)
+      // Small delay to ensure everything is ready
+      const timer = setTimeout(() => {
+        handleCreateProject()
+      }, 500)
+      return () => clearTimeout(timer)
+    }
+  }, [shouldAutoCreate, user, isCreating])
 
   const updateConfig = (updates: Partial<ProjectConfig>) => {
     setConfig(prev => ({ ...prev, ...updates }))
@@ -112,6 +161,7 @@ export default function NewProjectPage() {
 
     setIsCreating(true)
     setError(null)
+    setShouldAutoCreate(false) // Clear auto-create flag
     
     try {
       // Validate project name
@@ -141,6 +191,18 @@ export default function NewProjectPage() {
       }
 
       // Call backend API to create the repository
+      // Log the config being sent
+      const repoPayload = {
+        name: config.projectName,
+        description: config.projectDescription || `Created with 5AM Founder - ${new Date().toLocaleDateString()}`,
+        private: config.isPrivate,
+        auto_init: config.initWithReadme,
+        tech_stack: config.techStack,
+        integrations: config.integrations
+      }
+      
+      console.log('Creating repository with payload:', repoPayload)
+      
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/github/repositories`, {
         method: 'POST',
         headers: {
@@ -149,14 +211,7 @@ export default function NewProjectPage() {
           'X-GitHub-Token': githubToken
         },
         credentials: 'include',
-        body: JSON.stringify({
-          name: config.projectName,
-          description: config.projectDescription || `Created with 5AM Founder - ${new Date().toLocaleDateString()}`,
-          private: config.isPrivate,
-          auto_init: config.initWithReadme,
-          tech_stack: config.techStack,
-          integrations: config.integrations
-        })
+        body: JSON.stringify(repoPayload)
       })
 
       if (!response.ok) {
@@ -187,9 +242,9 @@ export default function NewProjectPage() {
       // Open repository in new tab
       window.open(repoData.html_url, '_blank')
       
-      // Redirect to dashboard after a short delay
+      // Redirect to dashboard with refresh flag after a short delay
       setTimeout(() => {
-        router.push('/dashboard')
+        router.push('/dashboard?refresh=true')
       }, 1000)
     } catch (error) {
       console.error('Error creating project:', error)
@@ -304,6 +359,22 @@ export default function NewProjectPage() {
           <div className="mt-12 mb-8">
             {renderStep()}
           </div>
+
+          {/* Auto-create overlay */}
+          {shouldAutoCreate && (
+            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center">
+              <div className="glass-card rounded-xl p-8 max-w-md text-center">
+                <div className="mb-4">
+                  <svg className="animate-spin h-12 w-12 mx-auto text-blue-500" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                </div>
+                <h3 className="text-xl font-semibold mb-2">Welcome back!</h3>
+                <p className="text-gray-400">Creating your project...</p>
+              </div>
+            </div>
+          )}
 
           {/* Navigation Buttons */}
           <div className="flex justify-between items-center mt-12">

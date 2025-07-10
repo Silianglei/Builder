@@ -123,8 +123,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Clear all local storage items related to auth
       localStorage.removeItem('supabase.auth.token')
-      localStorage.removeItem('projectConfig')
       localStorage.removeItem('redirectAfterAuth')
+      // Keep projectConfig - user might want to continue their draft later
       
       // Clear all cookies (in case any are set)
       document.cookie.split(";").forEach(function(c) { 
@@ -145,14 +145,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Clear any existing session data if forcing reauth
       if (forceReauth) {
         await supabase.auth.signOut()
-        localStorage.clear()
+        
+        // Selectively clear auth-related items but preserve project config
+        const projectConfig = localStorage.getItem('projectConfig')
+        const redirectAfterAuth = localStorage.getItem('redirectAfterAuth')
+        
+        // Clear auth-related items
+        localStorage.removeItem('supabase.auth.token')
+        Object.keys(localStorage).forEach(key => {
+          if (key.startsWith('sb-') || key.includes('supabase')) {
+            localStorage.removeItem(key)
+          }
+        })
+        
+        // Restore preserved items
+        if (projectConfig) localStorage.setItem('projectConfig', projectConfig)
+        if (redirectAfterAuth) localStorage.setItem('redirectAfterAuth', redirectAfterAuth)
+        
         sessionStorage.clear()
+      }
+      
+      // Check if we have a redirect intention stored
+      const redirectAfterAuth = localStorage.getItem('redirectAfterAuth')
+      let redirectTo = `${window.location.origin}/auth/callback`
+      
+      // If we have a redirect intention, pass it through the OAuth flow
+      if (redirectAfterAuth) {
+        const callbackUrl = new URL(redirectTo)
+        callbackUrl.searchParams.set('redirect_to', redirectAfterAuth)
+        redirectTo = callbackUrl.toString()
       }
       
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'github',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo,
           skipBrowserRedirect: false,
           scopes: 'repo user read:org',
           queryParams: forceReauth ? {

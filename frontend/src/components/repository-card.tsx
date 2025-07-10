@@ -1,6 +1,6 @@
 'use client'
 
-import { GitBranch, Lock, Unlock, ArrowRight, Sparkles } from 'lucide-react'
+import { GitBranch, Lock, Unlock, ArrowRight } from 'lucide-react'
 
 export interface Repository {
   id: number
@@ -67,13 +67,6 @@ export default function RepositoryCard({ repository, onClick }: RepositoryCardPr
         </p>
       )}
       
-      {/* 5AM Founder Badge */}
-      {repository.is_5am_founder && (
-        <div className="flex items-center space-x-2 mt-4 pt-4 border-t border-white/5">
-          <Sparkles className="w-4 h-4 text-purple-400" />
-          <span className="text-xs font-medium text-purple-400">Created with 5AM Founder</span>
-        </div>
-      )}
       </div>
     </div>
   )
