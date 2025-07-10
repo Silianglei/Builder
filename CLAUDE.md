@@ -63,6 +63,21 @@ make install  # Creates .env from .env.example
 # Edit .env with your actual Supabase credentials
 ```
 
+### Supabase Project Details
+- **Production Project**: Builder (ID: cuwvinwquecivxrmdxkz)
+- **Region**: us-east-2
+
+### GitHub Authentication Setup
+**CRITICAL**: Enable provider token access in Supabase Dashboard:
+1. Go to Authentication > Providers > GitHub
+2. Under "Advanced Settings", enable "Return provider tokens"
+3. Save changes
+
+**Database Schema**:
+- `github_tokens` table stores GitHub access tokens securely
+- Row Level Security (RLS) ensures users can only access their own tokens
+- Tokens are persisted across sessions for seamless GitHub integration
+
 ## Development Commands
 
 ### Docker Development (Recommended)
@@ -258,13 +273,6 @@ Located at `docs/styles.md`, contains:
 - SVG logo collection for all integrations
 - Animation patterns and best practices
 - Responsive design patterns
-
-### README.md
-The main project documentation with:
-- Project overview and features
-- Complete setup instructions
-- Deployment guides
-- UI feature highlights
 
 ## Why This Setup?
 

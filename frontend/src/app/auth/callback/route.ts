@@ -34,11 +34,11 @@ export async function GET(request: Request) {
       provider: data.session?.user?.app_metadata?.provider
     })
     
-    // The provider token should be available in session.provider_token
-    if (data.session?.provider_token) {
-      console.log('GitHub provider token is available')
-    } else {
-      console.warn('No provider token in session - user may need to re-authenticate or scopes may not be set correctly')
+    // Store GitHub token if available and user authenticated with GitHub
+    if (data.session?.provider_token && data.session.user?.app_metadata?.provider === 'github') {
+      console.log('GitHub provider token is available, will be stored after redirect')
+    } else if (!data.session?.provider_token) {
+      console.warn('No provider token in session - ensure "Return provider tokens" is enabled in Supabase GitHub settings')
     }
   }
 

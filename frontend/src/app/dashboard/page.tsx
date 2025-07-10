@@ -49,27 +49,6 @@ function UserDropdown({ user, signOut }: { user: any; signOut: () => void }) {
 
       {isOpen && (
         <div className="absolute right-0 mt-2 w-48 glass-card rounded-xl overflow-hidden animate-slide-up">
-          <div className="p-4 border-b border-white/10">
-            <div className="flex items-center space-x-3">
-              {user?.avatar_url ? (
-                <img
-                  src={user.avatar_url}
-                  alt={user.name || user.email}
-                  className="w-10 h-10 rounded-full"
-                />
-              ) : (
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
-                  <span className="text-lg font-medium text-white">
-                    {(user?.name || user?.email || 'U')[0].toUpperCase()}
-                  </span>
-                </div>
-              )}
-              <div>
-                <p className="font-medium">{user?.name || user?.username || 'User'}</p>
-                <p className="text-xs text-gray-400">{user?.email}</p>
-              </div>
-            </div>
-          </div>
           <div className="p-2">
             <Link
               href="/settings"

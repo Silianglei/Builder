@@ -46,6 +46,17 @@
 - Added missing GitHub integration module
 - Resolved avatar display issues in production
 
+### GitHub Authentication Persistence (July 2025)
+- **Problem**: Users had to re-authenticate with GitHub on every session
+- **Solution**: Implemented secure token storage in Supabase
+- **Implementation**:
+  - Created `github_tokens` table with RLS policies
+  - Added API route `/api/github/token` for secure token management
+  - Updated `getGitHubToken()` to check stored tokens first
+  - Automatic token storage on successful GitHub OAuth
+  - Token cleanup on user sign out
+- **Security**: Tokens are protected by Row Level Security and only accessible by the token owner
+
 ## Current Implementation Status
 
 ### What's Built

@@ -95,6 +95,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     setLoading(true)
     try {
+      // Clear GitHub tokens from database BEFORE signing out
+      // (because we need authentication to delete the token)
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.access_token) {
+          const response = await fetch('/api/github/token', {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.access_token}`
+            },
+          })
+          
+          if (!response.ok) {
+            console.error('Failed to clear GitHub token from database')
+          } else {
+            console.log('GitHub token cleared from database')
+          }
+        }
+      } catch (error) {
+        console.error('Error clearing GitHub token:', error)
+      }
+
       // Sign out from Supabase
       await supabase.auth.signOut()
       
