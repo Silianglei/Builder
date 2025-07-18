@@ -57,6 +57,20 @@
   - Token cleanup on user sign out
 - **Security**: Tokens are protected by Row Level Security and only accessible by the token owner
 
+### User Flow Revamp (July 2025)
+- **Problem**: Confusing navigation and authentication flow
+- **Solution**: Streamlined user experience based on authentication state
+- **Implementation**:
+  - **Landing Page Navigation**: Dynamic button in upper right
+    - Authenticated users see "Dashboard" button
+    - Unauthenticated users see "Sign In" button
+  - **Create Project Flow**: 
+    - Authenticated users go directly to project creation
+    - Unauthenticated users trigger GitHub OAuth first
+  - **Auth Callback**: Fixed 404 error by creating proper page component with Suspense boundary
+  - **Removed**: Automatic redirect to dashboard for authenticated users
+- **Benefits**: Clearer user journey, simplified OAuth flow, better navigation
+
 ## Current Implementation Status
 
 ### What's Built
