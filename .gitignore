@@ -308,3 +308,5 @@ cython_debug/
 # Local configuration
 config.local.*
 settings.local.*
+
+docs/workers/
