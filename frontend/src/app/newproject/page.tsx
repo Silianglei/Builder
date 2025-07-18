@@ -13,6 +13,9 @@ import StepIndicator from "./components/StepIndicator"
 import ProjectDetailsStep from "./components/ProjectDetailsStep"
 import IntegrationsStep from "./components/IntegrationsStep"
 import ReviewStep from "./components/ReviewStep"
+import ProjectCreationStream from "@/components/ProjectCreationStream"
+import InstallationModal from "@/components/installation-modal"
+import { Repository } from "@/components/repository-card"
 
 export interface ProjectConfig {
   // Step 1: Project Details
@@ -73,6 +76,7 @@ export default function NewProjectPage() {
   const [shouldAutoCreate, setShouldAutoCreate] = useState(false)
   const [hasLoadedConfig, setHasLoadedConfig] = useState(false)
   const [isLoadingFromStorage, setIsLoadingFromStorage] = useState(true)
+  const [createdRepository, setCreatedRepository] = useState<Repository | null>(null)
 
   // Load saved config from localStorage if exists
   useEffect(() => {
@@ -239,13 +243,24 @@ export default function NewProjectPage() {
       // Show success message
       setError(null)
       
-      // Open repository in new tab
-      window.open(repoData.html_url, '_blank')
+      // Convert the response to Repository type and set it
+      const repository: Repository = {
+        id: repoData.id,
+        name: repoData.name,
+        full_name: repoData.full_name,
+        html_url: repoData.html_url,
+        clone_url: repoData.clone_url,
+        ssh_url: repoData.ssh_url,
+        private: repoData.private,
+        description: repoData.description,
+        is_5am_founder: true
+      }
       
-      // Redirect to dashboard with refresh flag after a short delay
+      // Wait a bit for the streaming to complete, then show the installation modal
       setTimeout(() => {
-        router.push('/dashboard?refresh=true')
-      }, 1000)
+        setIsCreating(false)
+        setCreatedRepository(repository)
+      }, 2000)
     } catch (error) {
       console.error('Error creating project:', error)
       setError(error instanceof Error ? error.message : 'An unexpected error occurred')
@@ -424,6 +439,19 @@ export default function NewProjectPage() {
           </div>
         </div>
       </main>
+      
+      {/* Project Creation Stream Modal */}
+      <ProjectCreationStream userId={user?.id || ''} isCreating={isCreating} />
+      
+      {/* Installation Modal for created repository */}
+      <InstallationModal
+        repository={createdRepository}
+        onClose={() => {
+          setCreatedRepository(null)
+          // Redirect to dashboard after closing
+          router.push('/dashboard?refresh=true')
+        }}
+      />
     </div>
   )
 }

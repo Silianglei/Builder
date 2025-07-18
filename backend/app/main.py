@@ -1,13 +1,15 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from dotenv import load_dotenv
 import logging
+import uuid
 
 from .config import get_settings
 from .routers import auth, users, github
 from .db.supabase_client import get_supabase_client
 from .middleware import SecurityHeadersMiddleware, RateLimitMiddleware
+from .websocket_manager import manager
 
 # Load environment variables
 load_dotenv()
@@ -88,3 +90,20 @@ async def health_check():
             "api": "operational",
             "error": str(e)
         }
+
+
+@app.websocket("/ws/{user_id}")
+async def websocket_endpoint(websocket: WebSocket, user_id: str):
+    """WebSocket endpoint for real-time updates"""
+    connection_id = str(uuid.uuid4())
+    await manager.connect(websocket, connection_id, user_id)
+    
+    try:
+        while True:
+            # Keep the connection alive
+            data = await websocket.receive_text()
+            # Echo back to confirm connection
+            await websocket.send_text(f"Echo: {data}")
+    except WebSocketDisconnect:
+        manager.disconnect(connection_id, user_id)
+        logger.info(f"WebSocket disconnected for user {user_id}")

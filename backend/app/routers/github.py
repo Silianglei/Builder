@@ -1,12 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
-from github import Github, GithubException
+from github import Github, GithubException, InputGitTreeElement
 from typing import Dict, List, Optional, Any
 from pydantic import BaseModel
 import base64
 import time
+import asyncio
 
 from ..auth.auth import get_current_user
 from ..services.template_service import template_service
+from ..websocket_manager import manager
 
 router = APIRouter(prefix="/api/v1/github", tags=["github"])
 
@@ -128,96 +130,175 @@ async def create_repository(
         g = Github(auth_header)
         github_user = g.get_user()
         
-        # Create the repository
+        # Create the repository WITHOUT auto_init to avoid conflicts
         repo = github_user.create_repo(
             name=repo_data.name,
-            description=repo_data.description,
+            description=repo_data.description or f"A new SaaS project created with 5AM Founder",
             private=repo_data.private,
-            auto_init=repo_data.auto_init
+            auto_init=False  # We'll create all files manually
         )
         
-        # Upload template files instead of just README
-        if repo_data.auto_init:
-            try:
-                print(f"Starting template upload for repository: {repo_data.name}")
+        # Always upload template files
+        try:
+            print(f"Starting template upload for repository: {repo_data.name}")
+            
+            # Send initial WebSocket update
+            await manager.send_project_update(
+                current_user.get("id", "unknown"),
+                "repository_created",
+                {"repository_name": repo_data.name, "url": repo.html_url}
+            )
+            
+            # Prepare project configuration for template
+            project_config = {
+                "name": repo_data.name,
+                "description": repo_data.description or f"A new SaaS project created with 5AM Founder",
+                "github_username": github_user.login,
+                "repo_url": repo.html_url,
+                # Add placeholders for Supabase (will be populated later)
+                "supabase_url": "your_supabase_url",
+                "supabase_anon_key": "your_supabase_anon_key", 
+                "supabase_service_key": "your_supabase_service_key",
+                "supabase_project_id": "your_project_id"
+            }
+            
+            # Send template preparation update
+            await manager.send_project_update(
+                current_user.get("id", "unknown"),
+                "preparing_template",
+                {"message": "Preparing project template with your configuration..."}
+            )
+            
+            # Get all template files with variables replaced
+            template_files = template_service.prepare_template_files(project_config)
+            
+            print(f"Prepared {len(template_files)} files for upload")
+            
+            # Send file count update
+            await manager.send_project_update(
+                current_user.get("id", "unknown"),
+                "template_ready",
+                {"total_files": len(template_files), "message": f"Ready to upload {len(template_files)} files"}
+            )
+            
+            # Wait a moment for the repository to be fully created
+            await asyncio.sleep(2)
+            
+            # For an empty repository, we need to create at least one file first
+            # to establish the default branch
+            await manager.send_project_update(
+                current_user.get("id", "unknown"),
+                "upload_started",
+                {"message": "Initializing repository..."}
+            )
+            
+            # Create README first to establish the main branch
+            initial_readme = f"# {repo_data.name}\n\nInitializing project from 5AM Founder..."
+            repo.create_file(
+                "README.md",
+                "Initial commit from 5AM Founder",
+                initial_readme,
+                branch="main"
+            )
+            
+            # Now wait for the branch to be created
+            await asyncio.sleep(1)
+            
+            # Now upload all template files
+            await manager.send_project_update(
+                current_user.get("id", "unknown"),
+                "upload_progress",
+                {"message": "Uploading template files...", "current": 0, "total": len(template_files)}
+            )
+            
+            # Upload files in batches to avoid rate limits
+            batch_size = 10
+            uploaded_count = 0
+            
+            for i in range(0, len(template_files), batch_size):
+                batch = template_files[i:i + batch_size]
                 
-                # Prepare project configuration for template
-                project_config = {
-                    "name": repo_data.name,
-                    "description": repo_data.description or f"A new SaaS project created with 5AM Founder",
-                    "github_username": github_user.login,
-                    "repo_url": repo.html_url,
-                    # Add placeholders for Supabase (will be populated later)
-                    "supabase_url": "your_supabase_url",
-                    "supabase_anon_key": "your_supabase_anon_key", 
-                    "supabase_service_key": "your_supabase_service_key",
-                    "supabase_project_id": "your_project_id"
-                }
-                
-                # Get all template files with variables replaced
-                template_files = template_service.prepare_template_files(project_config)
-                
-                print(f"Prepared {len(template_files)} files for upload")
-                
-                # Wait a moment for the repository to be fully created
-                time.sleep(2)
-                
-                # Get the default branch (usually 'main')
-                default_branch = repo.default_branch
-                
-                # Upload files in batches to avoid rate limits
-                batch_size = 10
-                for i in range(0, len(template_files), batch_size):
-                    batch = template_files[i:i + batch_size]
-                    
-                    for file_path, content, is_binary in batch:
-                        try:
-                            print(f"Uploading: {file_path}")
-                            
-                            # Prepare content for upload
+                for file_path, content, is_binary in batch:
+                    try:
+                        # Skip README.md as we already created it
+                        if file_path == "README.md":
+                            # Update the README with the actual content
+                            readme_file = repo.get_contents("README.md", ref="main")
+                            repo.update_file(
+                                "README.md",
+                                "Update README from template",
+                                content,
+                                readme_file.sha,
+                                branch="main"
+                            )
+                        else:
+                            # Create new file
                             if is_binary:
-                                # Binary files need to be base64 encoded
+                                # For binary files, encode to base64
                                 file_content = base64.b64encode(content).decode('utf-8')
                             else:
-                                # Text files can be uploaded directly
                                 file_content = content
                             
-                            # Check if file already exists (in case of README.md)
-                            try:
-                                existing_file = repo.get_contents(file_path, ref=default_branch)
-                                # Update existing file
-                                repo.update_file(
-                                    file_path,
-                                    f"Update {file_path} from 5AM Founder template",
-                                    file_content,
-                                    existing_file.sha,
-                                    branch=default_branch
-                                )
-                                print(f"Updated existing file: {file_path}")
-                            except:
-                                # Create new file
-                                repo.create_file(
-                                    file_path,
-                                    f"Add {file_path} from 5AM Founder template",
-                                    file_content,
-                                    branch=default_branch
-                                )
-                                print(f"Created new file: {file_path}")
-                            
-                        except Exception as e:
-                            print(f"Error uploading {file_path}: {str(e)}")
-                            # Continue with other files even if one fails
-                            continue
-                    
-                    # Small delay between batches to avoid rate limits
-                    if i + batch_size < len(template_files):
-                        time.sleep(1)
+                            repo.create_file(
+                                file_path,
+                                f"Add {file_path}",
+                                file_content,
+                                branch="main"
+                            )
+                        
+                        uploaded_count += 1
+                        
+                        # Send progress update
+                        if uploaded_count % 5 == 0 or uploaded_count == len(template_files):
+                            await manager.send_project_update(
+                                current_user.get("id", "unknown"),
+                                "upload_progress",
+                                {
+                                    "current": uploaded_count,
+                                    "total": len(template_files),
+                                    "percentage": round((uploaded_count / len(template_files)) * 100),
+                                    "current_file": file_path
+                                }
+                            )
+                        
+                    except Exception as e:
+                        print(f"Error uploading {file_path}: {str(e)}")
+                        await manager.send_project_update(
+                            current_user.get("id", "unknown"),
+                            "file_error",
+                            {"file": file_path, "error": str(e)}
+                        )
                 
-                print("Template upload completed successfully")
+                # Small delay between batches to avoid rate limits
+                if i + batch_size < len(template_files):
+                    await asyncio.sleep(0.5)
+            
+            print("Template upload completed successfully")
+            
+            # Add topics to identify this as a 5AM Founder project
+            try:
+                repo.replace_topics(["5am-founder", "nextjs", "supabase", "typescript"])
+                print("Added 5AM Founder topics to repository")
             except Exception as e:
-                # Repository was created but we couldn't upload all template files
-                # This is okay, the repo still exists
-                print(f"Warning: Could not upload all template files: {str(e)}")
+                print(f"Warning: Could not add topics: {str(e)}")
+            
+            # Send completion update
+            await manager.send_project_update(
+                current_user.get("id", "unknown"),
+                "upload_complete",
+                {
+                    "message": "All files uploaded successfully!",
+                    "total_files": len(template_files),
+                    "repository_url": repo.html_url
+                }
+            )
+        except Exception as e:
+            # Repository was created but we couldn't upload all template files
+            # This is okay, the repo still exists
+            print(f"Warning: Could not upload all template files: {str(e)}")
+        
+        # Refresh repo data to get updated topics
+        repo = g.get_repo(repo.full_name)
         
         return RepositoryResponse(
             id=repo.id,
@@ -227,7 +308,7 @@ async def create_repository(
             clone_url=repo.clone_url,
             ssh_url=repo.ssh_url,
             private=repo.private,
-            description=repo.description
+            description=repo.description or f"A new SaaS project created with 5AM Founder"
         )
         
     except GithubException as e:
