@@ -328,12 +328,25 @@ For support, email support@5amfounder.com or open an issue in this repository.
 
 Built with ❤️ by [5AM Founder](https://5amfounder.com) - Ship your SaaS at 5AM
 """
-                repo.create_file(
-                    "README.md",
-                    "Initial commit from 5AM Founder",
-                    readme_content,
-                    branch="main"
-                )
+                # Check if README already exists (when auto_init=True)
+                try:
+                    existing_readme = repo.get_contents("README.md")
+                    # Update existing README
+                    repo.update_file(
+                        "README.md",
+                        "Update README from 5AM Founder",
+                        readme_content,
+                        existing_readme.sha,
+                        branch="main"
+                    )
+                except:
+                    # README doesn't exist, create it
+                    repo.create_file(
+                        "README.md",
+                        "Initial commit from 5AM Founder",
+                        readme_content,
+                        branch="main"
+                    )
             except Exception as e:
                 # Repository was created but we couldn't add the README
                 # This is okay, the repo still exists
