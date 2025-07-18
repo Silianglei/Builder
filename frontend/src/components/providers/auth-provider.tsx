@@ -176,7 +176,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         redirectTo = callbackUrl.toString()
       }
       
-      const { error } = await supabase.auth.signInWithOAuth({
+      console.log('Attempting GitHub OAuth with redirectTo:', redirectTo)
+      
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'github',
         options: {
           redirectTo,
@@ -189,7 +191,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       })
       
+      console.log('OAuth response:', { data, error })
+      
       if (error) {
+        console.error('OAuth error:', error)
         setLoading(false)
         return { error: error.message }
       }
@@ -198,6 +203,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Loading state will be reset when the page redirects
       return {}
     } catch (error) {
+      console.error('Unexpected error in signInWithGitHub:', error)
       setLoading(false)
       return { error: 'An unexpected error occurred' }
     }

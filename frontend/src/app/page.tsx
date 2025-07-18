@@ -2,19 +2,22 @@
 
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
-import { useEffect } from "react"
 import Link from "next/link"
-import Image from "next/image"
 
 export default function Home() {
   const router = useRouter()
-  const { user } = useAuth()
+  const { user, signInWithGitHub } = useAuth()
 
-  useEffect(() => {
+  const handleCreateProject = async () => {
     if (user) {
-      router.push('/dashboard')
+      // User is authenticated, go directly to new project page
+      router.push('/newproject')
+    } else {
+      // User is not authenticated, set redirect and trigger GitHub OAuth
+      localStorage.setItem('redirectAfterAuth', '/newproject')
+      await signInWithGitHub()
     }
-  }, [user, router])
+  }
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white overflow-hidden relative">
@@ -82,15 +85,27 @@ export default function Home() {
           </div>
           
           <div className="flex items-center space-x-4">
-            <Link 
-              href="/newproject" 
-              className="flex items-center space-x-2 px-5 py-2.5 glass-card rounded-lg font-medium transition-all hover:bg-white/5"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-              </svg>
-              <span>New Project</span>
-            </Link>
+            {user ? (
+              <Link 
+                href="/dashboard" 
+                className="flex items-center space-x-2 px-5 py-2.5 glass-card rounded-lg font-medium transition-all hover:bg-white/5"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+                </svg>
+                <span>Dashboard</span>
+              </Link>
+            ) : (
+              <button 
+                onClick={() => signInWithGitHub()}
+                className="flex items-center space-x-2 px-5 py-2.5 glass-card rounded-lg font-medium transition-all hover:bg-white/5"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+                </svg>
+                <span>Sign In</span>
+              </button>
+            )}
           </div>
         </div>
       </nav>
@@ -117,8 +132,8 @@ export default function Home() {
             
             {/* CTA Button */}
             <div className="mb-16">
-              <Link 
-                href="/newproject"
+              <button 
+                onClick={handleCreateProject}
                 className="inline-flex items-center space-x-3 px-8 py-4 gradient-border group"
               >
                 <div className="flex items-center space-x-3 px-6 py-3 bg-[#0a0a0a] rounded-[0.65rem] transition-all group-hover:bg-[#0a0a0a]/50">
@@ -130,7 +145,7 @@ export default function Home() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                   </svg>
                 </div>
-              </Link>
+              </button>
             </div>
             
             {/* Social Proof */}
@@ -202,7 +217,7 @@ export default function Home() {
                       </svg>
                     )
                   }
-                ].map((item, index) => (
+                ].map((item) => (
                   <div key={item.step} className="relative group text-center">
                     <div className="transition-all duration-300">
                       {/* Step Number */}
@@ -420,8 +435,8 @@ export default function Home() {
                 Join hundreds of developers who are building their SaaS faster with our automated boilerplate generator.
               </p>
               
-              <Link 
-                href="/newproject"
+              <button 
+                onClick={handleCreateProject}
                 className="inline-flex items-center space-x-3 px-8 py-4 gradient-border group"
               >
                 <div className="flex items-center space-x-3 px-6 py-3 bg-[#0a0a0a] rounded-[0.65rem] transition-all group-hover:bg-[#0a0a0a]/50">
@@ -433,7 +448,7 @@ export default function Home() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                   </svg>
                 </div>
-              </Link>
+              </button>
               
               <p className="mt-8 text-sm text-gray-600">
                 No credit card required. Start building in minutes.
