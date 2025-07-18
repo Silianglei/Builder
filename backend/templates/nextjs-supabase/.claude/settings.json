@@ -1,0 +1,17 @@
+{
+  "name": "{{PROJECT_NAME}}",
+  "description": "{{PROJECT_DESCRIPTION}}",
+  "mcpServers": {
+    "supabase": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@supabase/mcp"
+      ],
+      "env": {
+        "SUPABASE_PROJECT_ID": "{{SUPABASE_PROJECT_ID}}"
+      }
+    }
+  },
+  "instructions": "This is a Next.js application with Supabase authentication. The project uses TypeScript and Tailwind CSS for styling. Environment variables are configured in .env.local file. The Supabase MCP server is configured to help with database operations and project management."
+}

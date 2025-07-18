@@ -2,8 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from github import Github, GithubException
 from typing import Dict, List, Optional, Any
 from pydantic import BaseModel
+import base64
+import time
 
 from ..auth.auth import get_current_user
+from ..services.template_service import template_service
 
 router = APIRouter(prefix="/api/v1/github", tags=["github"])
 
@@ -113,7 +116,7 @@ async def create_repository(
     repo_data: CreateRepositoryRequest,
     current_user: Dict = Depends(get_current_user)
 ) -> RepositoryResponse:
-    """Create a new GitHub repository with a simple boilerplate"""
+    """Create a new GitHub repository with a full Next.js + Supabase template"""
     auth_header = request.headers.get("X-GitHub-Token")
     if not auth_header:
         raise HTTPException(
@@ -133,224 +136,88 @@ async def create_repository(
             auto_init=repo_data.auto_init
         )
         
-        # Add a comprehensive README as a boilerplate
+        # Upload template files instead of just README
         if repo_data.auto_init:
             try:
-                # Extract tech stack and integrations info
-                tech_stack = repo_data.tech_stack or {}
-                integrations = repo_data.integrations or {}
+                print(f"Starting template upload for repository: {repo_data.name}")
                 
-                # Build features list based on selections
-                features = []
+                # Prepare project configuration for template
+                project_config = {
+                    "name": repo_data.name,
+                    "description": repo_data.description or f"A new SaaS project created with 5AM Founder",
+                    "github_username": github_user.login,
+                    "repo_url": repo.html_url,
+                    # Add placeholders for Supabase (will be populated later)
+                    "supabase_url": "your_supabase_url",
+                    "supabase_anon_key": "your_supabase_anon_key", 
+                    "supabase_service_key": "your_supabase_service_key",
+                    "supabase_project_id": "your_project_id"
+                }
                 
-                # Tech stack features
-                if tech_stack.get('frontend') == 'nextjs15':
-                    features.append("⚡️ Next.js 15 with App Router")
-                if tech_stack.get('typescript', True):
-                    features.append("🔷 TypeScript for type safety")
-                if tech_stack.get('styling') == 'tailwind':
-                    features.append("🎨 Tailwind CSS for styling")
-                if tech_stack.get('docker'):
-                    features.append("🐳 Docker support for containerization")
+                # Get all template files with variables replaced
+                template_files = template_service.prepare_template_files(project_config)
                 
-                # Integration features
-                if integrations.get('supabaseAuth'):
-                    features.append("🔐 Supabase Authentication")
-                    auth_providers = integrations.get('supabaseAuthProviders', [])
-                    if auth_providers:
-                        features.append(f"   - OAuth providers: {', '.join(auth_providers)}")
-                if integrations.get('database') == 'supabase':
-                    features.append("💾 Supabase Database (PostgreSQL)")
-                elif integrations.get('database') == 'postgresql':
-                    features.append("🐘 PostgreSQL Database")
-                if integrations.get('stripe'):
-                    features.append("💳 Stripe Payment Integration")
-                if integrations.get('email') == 'resend':
-                    features.append("📧 Resend Email Service")
-                elif integrations.get('email') == 'sendgrid':
-                    features.append("📧 SendGrid Email Service")
-                if integrations.get('analytics') == 'posthog':
-                    features.append("📊 PostHog Analytics")
-                elif integrations.get('analytics') == 'google':
-                    features.append("📊 Google Analytics")
+                print(f"Prepared {len(template_files)} files for upload")
                 
-                features_str = '\n'.join(f"- {feature}" for feature in features)
+                # Wait a moment for the repository to be fully created
+                time.sleep(2)
                 
-                # Build setup instructions based on tech stack
-                setup_commands = []
-                dev_commands = []
-                build_commands = []
+                # Get the default branch (usually 'main')
+                default_branch = repo.default_branch
                 
-                if tech_stack.get('docker'):
-                    setup_commands.append("# Using Docker\nmake install  # Create .env from template\nmake dev      # Start development environment")
-                    dev_commands.append("make dev      # Docker with hot reload")
-                    build_commands.append("make prod     # Production build")
-                else:
-                    setup_commands.append("npm install   # Install dependencies")
-                    dev_commands.append("npm run dev   # Start development server")
-                    build_commands.append("npm run build # Build for production")
+                # Upload files in batches to avoid rate limits
+                batch_size = 10
+                for i in range(0, len(template_files), batch_size):
+                    batch = template_files[i:i + batch_size]
+                    
+                    for file_path, content, is_binary in batch:
+                        try:
+                            print(f"Uploading: {file_path}")
+                            
+                            # Prepare content for upload
+                            if is_binary:
+                                # Binary files need to be base64 encoded
+                                file_content = base64.b64encode(content).decode('utf-8')
+                            else:
+                                # Text files can be uploaded directly
+                                file_content = content
+                            
+                            # Check if file already exists (in case of README.md)
+                            try:
+                                existing_file = repo.get_contents(file_path, ref=default_branch)
+                                # Update existing file
+                                repo.update_file(
+                                    file_path,
+                                    f"Update {file_path} from 5AM Founder template",
+                                    file_content,
+                                    existing_file.sha,
+                                    branch=default_branch
+                                )
+                                print(f"Updated existing file: {file_path}")
+                            except:
+                                # Create new file
+                                repo.create_file(
+                                    file_path,
+                                    f"Add {file_path} from 5AM Founder template",
+                                    file_content,
+                                    branch=default_branch
+                                )
+                                print(f"Created new file: {file_path}")
+                            
+                        except Exception as e:
+                            print(f"Error uploading {file_path}: {str(e)}")
+                            # Continue with other files even if one fails
+                            continue
+                    
+                    # Small delay between batches to avoid rate limits
+                    if i + batch_size < len(template_files):
+                        time.sleep(1)
                 
-                setup_str = '\n'.join(setup_commands)
-                dev_str = '\n'.join(dev_commands)
-                build_str = '\n'.join(build_commands)
-                
-                # Create comprehensive README
-                readme_content = f"""# {repo_data.name}
-
-{repo_data.description or 'A new SaaS project created with 5AM Founder'}
-
-## 🚀 Features
-
-{features_str}
-
-## 📋 Prerequisites
-
-- Node.js 18+ 
-- npm or yarn
-{"- Docker (optional)" if tech_stack.get('docker') else ""}
-{"- Supabase account" if integrations.get('database') == 'supabase' or integrations.get('supabaseAuth') else ""}
-{"- Stripe account" if integrations.get('stripe') else ""}
-
-## 🛠️ Installation
-
-```bash
-# Clone the repository
-git clone {repo.clone_url}
-cd {repo_data.name}
-
-# Setup environment variables
-cp .env.example .env
-# Edit .env with your credentials
-
-{setup_str}
-```
-
-## 🔧 Configuration
-
-### Environment Variables
-
-Create a `.env` file in the root directory with the following variables:
-
-```env
-# API Configuration
-NEXT_PUBLIC_API_URL=http://localhost:8000
-
-{"# Supabase Configuration" if integrations.get('database') == 'supabase' or integrations.get('supabaseAuth') else ""}
-{"NEXT_PUBLIC_SUPABASE_URL=your_supabase_url" if integrations.get('database') == 'supabase' or integrations.get('supabaseAuth') else ""}
-{"NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key" if integrations.get('database') == 'supabase' or integrations.get('supabaseAuth') else ""}
-{"SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_key" if integrations.get('database') == 'supabase' or integrations.get('supabaseAuth') else ""}
-
-{"# Stripe Configuration" if integrations.get('stripe') else ""}
-{"STRIPE_SECRET_KEY=your_stripe_secret_key" if integrations.get('stripe') else ""}
-{"NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key" if integrations.get('stripe') else ""}
-
-{"# Email Configuration" if integrations.get('email') != 'none' else ""}
-{"RESEND_API_KEY=your_resend_api_key" if integrations.get('email') == 'resend' else ""}
-{"SENDGRID_API_KEY=your_sendgrid_api_key" if integrations.get('email') == 'sendgrid' else ""}
-
-# JWT Configuration
-JWT_SECRET_KEY=your_jwt_secret_key
-```
-
-## 💻 Development
-
-```bash
-{dev_str}
-
-# The application will be available at:
-# Frontend: http://localhost:3000
-# Backend API: http://localhost:8000
-# API Docs: http://localhost:8000/docs
-```
-
-## 🏗️ Building for Production
-
-```bash
-{build_str}
-```
-
-## 📁 Project Structure
-
-```
-├── frontend/              # Next.js frontend application
-│   ├── src/
-│   │   ├── app/          # App Router pages
-│   │   ├── components/   # Reusable React components
-│   │   ├── hooks/        # Custom React hooks
-│   │   ├── lib/          # Utility functions and libraries
-│   │   └── styles/       # Global styles and Tailwind config
-│   └── public/           # Static assets
-├── backend/              # FastAPI backend application
-│   ├── app/
-│   │   ├── routers/      # API endpoints
-│   │   ├── models/       # Pydantic models
-│   │   ├── auth/         # Authentication logic
-│   │   └── main.py       # Application entry point
-│   └── requirements.txt  # Python dependencies
-{"├── docker-compose.yml    # Docker configuration" if tech_stack.get('docker') else ""}
-{"├── Makefile              # Development commands" if tech_stack.get('docker') else ""}
-└── README.md             # This file
-```
-
-## 🧪 Testing
-
-```bash
-{"npm test         # Run tests" if tech_stack.get('testing') != 'none' else "# Testing not configured"}
-{"npm run test:e2e # Run end-to-end tests" if tech_stack.get('testing') != 'none' else ""}
-```
-
-## 🚀 Deployment
-
-### Vercel (Frontend)
-```bash
-cd frontend && vercel
-```
-
-### Render (Backend)
-1. Create a new Web Service on Render
-2. Connect your GitHub repository
-3. Set build command: `pip install -r requirements.txt`
-4. Set start command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
-
-## 📝 License
-
-MIT
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## 🛟 Support
-
-For support, email support@5amfounder.com or open an issue in this repository.
-
----
-
-Built with ❤️ by [5AM Founder](https://5amfounder.com) - Ship your SaaS at 5AM
-"""
-                # Check if README already exists (when auto_init=True)
-                try:
-                    existing_readme = repo.get_contents("README.md")
-                    # Update existing README
-                    repo.update_file(
-                        "README.md",
-                        "Update README from 5AM Founder",
-                        readme_content,
-                        existing_readme.sha,
-                        branch="main"
-                    )
-                except:
-                    # README doesn't exist, create it
-                    repo.create_file(
-                        "README.md",
-                        "Initial commit from 5AM Founder",
-                        readme_content,
-                        branch="main"
-                    )
+                print("Template upload completed successfully")
             except Exception as e:
-                # Repository was created but we couldn't add the README
+                # Repository was created but we couldn't upload all template files
                 # This is okay, the repo still exists
-                print(f"Warning: Could not create README: {str(e)}")
+                print(f"Warning: Could not upload all template files: {str(e)}")
         
         return RepositoryResponse(
             id=repo.id,
