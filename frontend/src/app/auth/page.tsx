@@ -11,8 +11,16 @@ import { Card, CardContent } from "@/components/ui/card"
 function AuthContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { signInWithGitHub, signInWithGoogle, loading } = useAuth()
+  const { user, signInWithGitHub, signInWithGoogle, loading } = useAuth()
   const [error, setError] = useState("")
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (!loading && user) {
+      const redirectTo = searchParams.get('redirect_to') || '/dashboard'
+      router.push(redirectTo)
+    }
+  }, [loading, user, router, searchParams])
 
   // Check for error parameter in URL
   useEffect(() => {
@@ -60,6 +68,22 @@ function AuthContent() {
     } catch (error) {
       setError("Failed to sign in with Google. Please try again.")
     }
+  }
+
+  // Show loading state while checking authentication
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+        <div className="text-white">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+        </div>
+      </div>
+    )
+  }
+
+  // Don't render the auth page if user is authenticated (prevents flash)
+  if (user) {
+    return null
   }
 
   return (

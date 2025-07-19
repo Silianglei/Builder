@@ -2,8 +2,13 @@ import { supabase } from './supabase'
 
 export async function getGitHubToken(): Promise<string | null> {
   try {
-    // First, check if we have a session
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    // First, refresh the session to ensure it's valid
+    const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession()
+    
+    // If refresh fails, try to get the current session
+    const { data: { session }, error: sessionError } = refreshError 
+      ? await supabase.auth.getSession()
+      : { data: { session: refreshedSession }, error: null }
     
     if (sessionError) {
       return null

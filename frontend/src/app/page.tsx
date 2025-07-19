@@ -3,10 +3,34 @@
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
 import Link from "next/link"
+import { useEffect } from "react"
 
 export default function Home() {
   const router = useRouter()
-  const { user, signInWithGitHub } = useAuth()
+  const { user, signInWithGitHub, loading } = useAuth()
+
+  // Automatically redirect authenticated users to dashboard
+  useEffect(() => {
+    if (!loading && user) {
+      router.push('/dashboard')
+    }
+  }, [loading, user, router])
+
+  // Show loading state while checking authentication
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+        <div className="text-white">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+        </div>
+      </div>
+    )
+  }
+
+  // Don't render the landing page if user is authenticated (prevents flash)
+  if (user) {
+    return null
+  }
 
   const handleCreateProject = async () => {
     if (user) {

@@ -14,18 +14,27 @@ export function useRepositories() {
     setError(null)
 
     try {
-      const githubToken = await getGitHubToken()
-      
-      if (!githubToken) {
-        setError('GitHub token not found. Please sign in with GitHub.')
-        return
-      }
-
       const { supabase } = await import('@/lib/supabase')
       const { data: { session } } = await supabase.auth.getSession()
       
       if (!session?.access_token) {
-        throw new Error('Not authenticated. Please sign in.')
+        setError('Your session has expired. Please sign in again.')
+        return
+      }
+
+      const githubToken = await getGitHubToken()
+      
+      if (!githubToken) {
+        // Check if user has GitHub linked
+        const providers = session.user?.app_metadata?.providers || []
+        const hasGitHubLinked = providers.includes('github')
+        
+        if (!hasGitHubLinked) {
+          setError('Please connect your GitHub account to continue.')
+        } else {
+          setError('Unable to access GitHub. Please sign in with GitHub again.')
+        }
+        return
       }
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/github/repositories`, {
@@ -56,17 +65,17 @@ export function useRepositories() {
   const deleteRepository = useCallback(async (repository: Repository) => {
     const [owner, repo] = repository.full_name.split('/')
     
-    const githubToken = await getGitHubToken()
-    
-    if (!githubToken) {
-      throw new Error('GitHub token not found. Please sign in with GitHub.')
-    }
-
     const { supabase } = await import('@/lib/supabase')
     const { data: { session } } = await supabase.auth.getSession()
     
     if (!session?.access_token) {
-      throw new Error('Not authenticated. Please sign in.')
+      throw new Error('Your session has expired. Please sign in again.')
+    }
+    
+    const githubToken = await getGitHubToken()
+    
+    if (!githubToken) {
+      throw new Error('Unable to access GitHub. Please sign in with GitHub again.')
     }
 
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/github/repositories/${owner}/${repo}`, {

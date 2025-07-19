@@ -19,27 +19,35 @@ export default function GitHubTest() {
     setTestResult(null)
 
     try {
-      // Get the GitHub token using our helper
-      const githubToken = await getGitHubToken()
-      
-      if (!githubToken) {
-        // If no token, user might need to re-authenticate
-        setError('GitHub token not found. Please sign in with GitHub again.')
-        
-        // Offer to re-authenticate
-        const shouldReauth = confirm('GitHub authentication token not found. Would you like to sign in with GitHub again?')
-        if (shouldReauth) {
-          await signInWithGitHub()
-        }
-        return
-      }
-
       // Get the Supabase session for API auth
       const { supabase } = await import('@/lib/supabase')
       const { data: { session } } = await supabase.auth.getSession()
       
       if (!session?.access_token) {
-        throw new Error('Not authenticated. Please sign in.')
+        setError('Your session has expired. Please sign in again.')
+        return
+      }
+
+      // Get the GitHub token using our helper
+      const githubToken = await getGitHubToken()
+      
+      if (!githubToken) {
+        // Check if user has GitHub linked
+        const providers = session.user?.app_metadata?.providers || []
+        const hasGitHubLinked = providers.includes('github')
+        
+        if (!hasGitHubLinked) {
+          setError('Please connect your GitHub account to continue.')
+        } else {
+          setError('Unable to access GitHub. Please sign in with GitHub again.')
+          
+          // Offer to re-authenticate
+          const shouldReauth = confirm('Unable to access GitHub. Would you like to sign in with GitHub again?')
+          if (shouldReauth) {
+            await signInWithGitHub()
+          }
+        }
+        return
       }
 
       // Log request details for debugging
@@ -91,19 +99,19 @@ export default function GitHubTest() {
     setCreateResult(null)
 
     try {
-      // Get the GitHub token using our helper
-      const githubToken = await getGitHubToken()
-      
-      if (!githubToken) {
-        throw new Error('GitHub token not found. Please sign in with GitHub.')
-      }
-
       // Get the Supabase session for API auth
       const { supabase } = await import('@/lib/supabase')
       const { data: { session } } = await supabase.auth.getSession()
       
       if (!session?.access_token) {
-        throw new Error('Not authenticated. Please sign in.')
+        throw new Error('Your session has expired. Please sign in again.')
+      }
+
+      // Get the GitHub token using our helper
+      const githubToken = await getGitHubToken()
+      
+      if (!githubToken) {
+        throw new Error('Unable to access GitHub. Please sign in with GitHub again.')
       }
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/github/repositories`, {
@@ -213,12 +221,12 @@ export default function GitHubTest() {
       {error && (
         <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-4">
           <p className="text-red-400 font-medium">Error: {error}</p>
-          {error.includes('GitHub token not found') && (
+          {(error.includes('Unable to access GitHub') || error.includes('session has expired') || error.includes('connect your GitHub')) && (
             <button
               onClick={() => signInWithGitHub()}
               className="mt-3 px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm font-medium transition-colors"
             >
-              Re-authenticate with GitHub
+              Sign in with GitHub
             </button>
           )}
         </div>
