@@ -100,12 +100,63 @@
    - ✅ Production deployment ready
    - ✅ Environment variable management
 
+### Template Creation System (July 2025)
+- **Problem**: Projects were only getting a README file, not actual code
+- **Solution**: Complete Next.js + Supabase template system
+- **Implementation**:
+  - Created `backend/templates/nextjs-supabase/` with full project structure
+  - 23 template files including:
+    - Complete Next.js 15 setup with TypeScript
+    - Supabase authentication (client/server/middleware)
+    - Protected routes and dashboard
+    - API routes with examples
+    - Tailwind CSS configuration
+    - Docker support
+    - Claude MCP integration (`.claude/settings.json`)
+  - Template variable replacement system for project customization
+  - Fixed GitHub empty repository issue by creating initial README first
+  - Batch file upload to avoid rate limits
+  - Added topics `["5am-founder", "nextjs", "supabase", "typescript"]` for dashboard filtering
+
+### Real-time Progress Streaming (July 2025)
+- **Problem**: Users had no visibility into project creation progress
+- **Solution**: WebSocket-based real-time updates with futuristic UI
+- **Implementation**:
+  - WebSocket endpoint at `/ws/{user_id}` for real-time communication
+  - Progress updates for each phase:
+    - Repository creation
+    - Template preparation
+    - File upload progress (every 5 files)
+    - Completion status
+  - Futuristic streaming UI with:
+    - Glass morphism design matching dashboard aesthetic
+    - Terminal-style output window
+    - Animated loading states with orbiting dots
+    - Mac-style window controls
+    - Live connection indicator
+    - No linear progress bar - status updates instead
+  - Automatic modal transition to installation guide after completion
+
+### UI/UX Improvements (July 2025)
+- **Project Creation Flow**:
+  - Removed automatic GitHub navigation after creation
+  - Shows installation modal with quick-start commands
+  - User stays on 5AM Founder platform
+  - Dashboard redirect only after closing modal
+- **Streaming UI Design**:
+  - Futuristic glass panel aesthetic
+  - Terminal-style build output
+  - Animated glow effects
+  - Custom scrollbar styling
+  - Gradient text for headers
+  - Blinking cursor during active processing
+
 ### What's Not Built Yet
-1. **Template Engine**
-   - ❌ Actual code generation
-   - ❌ Framework templates (only README currently)
-   - ❌ Module composition system
-   - ❌ File structure generation
+1. **Supabase Integration**
+   - ❌ User's own Supabase account connection
+   - ❌ Automatic project creation in Supabase
+   - ❌ Environment variable injection
+   - ❌ MCP server configuration with user's credentials
 
 2. **Payments**
    - ❌ Stripe integration
@@ -117,8 +168,29 @@
    - ❌ CLI tool
    - ❌ Template marketplace
    - ❌ Team management
+   - ❌ Multiple template options
 
 ## Technical Architecture
+
+### Template System Architecture
+- **Template Storage**: `backend/templates/nextjs-supabase/`
+- **Template Service**: `backend/app/services/template_service.py`
+  - Reads all template files recursively
+  - Handles binary and text files
+  - Variable replacement system using `{{VARIABLE_NAME}}` placeholders
+- **Variable Mapping**:
+  - `{{PROJECT_NAME}}` - Repository name
+  - `{{PROJECT_DESCRIPTION}}` - User's project description
+  - `{{SUPABASE_URL}}` - Placeholder for user's Supabase URL
+  - `{{SUPABASE_ANON_KEY}}` - Placeholder for anon key
+  - `{{SUPABASE_SERVICE_ROLE_KEY}}` - Placeholder for service key
+  - `{{SUPABASE_PROJECT_ID}}` - Placeholder for MCP configuration
+- **Upload Process**:
+  1. Create empty GitHub repository
+  2. Create initial README to establish main branch
+  3. Upload all template files in batches
+  4. Add topics for project identification
+  5. Stream progress via WebSocket
 
 ### Current Stack
 - **Backend**: FastAPI + Python 3.11 + PyJWT + Supabase
