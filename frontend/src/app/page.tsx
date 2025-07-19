@@ -7,7 +7,7 @@ import { useEffect } from "react"
 
 export default function Home() {
   const router = useRouter()
-  const { user, signInWithGitHub, loading } = useAuth()
+  const { user, loading } = useAuth()
 
   // Automatically redirect authenticated users to dashboard
   useEffect(() => {
@@ -37,9 +37,9 @@ export default function Home() {
       // User is authenticated, go directly to new project page
       router.push('/newproject')
     } else {
-      // User is not authenticated, set redirect and trigger GitHub OAuth
+      // User is not authenticated, redirect to auth page
       localStorage.setItem('redirectAfterAuth', '/newproject')
-      await signInWithGitHub()
+      router.push('/auth')
     }
   }
 
@@ -120,15 +120,15 @@ export default function Home() {
                 <span>Dashboard</span>
               </Link>
             ) : (
-              <button 
-                onClick={() => signInWithGitHub()}
+              <Link 
+                href="/auth"
                 className="flex items-center space-x-2 px-5 py-2.5 glass-card rounded-lg font-medium transition-all hover:bg-white/5"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
                 </svg>
                 <span>Sign In</span>
-              </button>
+              </Link>
             )}
           </div>
         </div>

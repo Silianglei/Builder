@@ -138,7 +138,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const signInWithGitHub = async (forceReauth: boolean = false) => {
+  const signInWithGitHub = async (forceReauth: boolean = false, requestRepoScope: boolean = false) => {
     setLoading(true)
     try {
       // Clear any existing session data if forcing reauth
@@ -175,12 +175,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         redirectTo = callbackUrl.toString()
       }
       
+      // Determine scopes based on whether we need repo access
+      const scopes = requestRepoScope ? 'repo user read:org' : 'user:email'
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'github',
         options: {
           redirectTo,
           skipBrowserRedirect: false,
-          scopes: 'repo user read:org',
+          scopes,
           queryParams: forceReauth ? {
             // Force GitHub to show the authorization page again
             prompt: 'consent'
@@ -239,6 +242,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signOut,
     signInWithGitHub,
     signInWithGoogle,
+    supabase,
   }
 
   return (
