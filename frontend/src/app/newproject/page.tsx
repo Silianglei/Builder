@@ -81,10 +81,10 @@ export default function NewProjectPage() {
   // Load saved config from localStorage if exists
   useEffect(() => {
     const savedConfig = localStorage.getItem('projectConfig')
-    console.log('Loading config from localStorage:', savedConfig)
+    // Load saved configuration from localStorage
     if (savedConfig && !hasLoadedConfig) {
       const parsedConfig = JSON.parse(savedConfig)
-      console.log('Parsed config:', parsedConfig)
+      // Successfully parsed saved configuration
       setIsLoadingFromStorage(true)
       setConfig(parsedConfig)
       setHasLoadedConfig(true)
@@ -182,7 +182,7 @@ export default function NewProjectPage() {
       
       if (!githubToken) {
         // User needs to re-authenticate with GitHub
-        console.log('No GitHub token found, re-authenticating...')
+        // No GitHub token found, need to re-authenticate
         localStorage.setItem('redirectAfterAuth', '/newproject')
         await signInWithGitHub()
         return
@@ -205,7 +205,7 @@ export default function NewProjectPage() {
         integrations: config.integrations
       }
       
-      console.log('Creating repository with payload:', repoPayload)
+      // Create repository with specified configuration
       
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/github/repositories`, {
         method: 'POST',
@@ -224,7 +224,7 @@ export default function NewProjectPage() {
           throw new Error('A repository with this name already exists. Please choose a different name.')
         } else if (response.status === 401) {
           // Token might be expired, re-authenticate
-          console.log('GitHub token expired, re-authenticating...')
+          // GitHub token expired, need to re-authenticate
           localStorage.setItem('redirectAfterAuth', '/newproject')
           await signInWithGitHub()
           return
@@ -235,7 +235,7 @@ export default function NewProjectPage() {
       }
 
       const repoData = await response.json()
-      console.log('Repository created successfully:', repoData)
+      // Repository created successfully
       
       // Clear saved config
       localStorage.removeItem('projectConfig')
@@ -262,7 +262,6 @@ export default function NewProjectPage() {
         setCreatedRepository(repository)
       }, 2000)
     } catch (error) {
-      console.error('Error creating project:', error)
       setError(error instanceof Error ? error.message : 'An unexpected error occurred')
       setIsCreating(false)
     }

@@ -38,7 +38,6 @@ function AuthContent() {
       }
       // GitHub OAuth will redirect automatically on success
     } catch (error) {
-      console.error("GitHub sign in error:", error)
       setError("Failed to sign in with GitHub. Please try again.")
     }
   }
@@ -59,7 +58,6 @@ function AuthContent() {
       }
       // Google OAuth will redirect automatically on success
     } catch (error) {
-      console.error("Google sign in error:", error)
       setError("Failed to sign in with Google. Please try again.")
     }
   }

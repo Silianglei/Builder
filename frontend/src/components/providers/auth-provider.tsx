@@ -109,13 +109,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           })
           
           if (!response.ok) {
-            console.error('Failed to clear GitHub token from database')
-          } else {
-            console.log('GitHub token cleared from database')
+            // Token cleanup failed, but continue with logout
           }
         }
       } catch (error) {
-        console.error('Error clearing GitHub token:', error)
+        // Token cleanup failed, but continue with logout
       }
 
       // Sign out from Supabase
@@ -133,7 +131,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       setUser(null)
     } catch (error) {
-      console.error('Error signing out:', error)
+      // Sign out failed, but clear local state anyway
+      setUser(null)
     } finally {
       setLoading(false)
     }
@@ -176,9 +175,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         redirectTo = callbackUrl.toString()
       }
       
-      console.log('Attempting GitHub OAuth with redirectTo:', redirectTo)
-      
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: 'github',
         options: {
           redirectTo,
@@ -191,10 +188,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       })
       
-      console.log('OAuth response:', { data, error })
-      
       if (error) {
-        console.error('OAuth error:', error)
         setLoading(false)
         return { error: error.message }
       }
@@ -203,7 +197,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Loading state will be reset when the page redirects
       return {}
     } catch (error) {
-      console.error('Unexpected error in signInWithGitHub:', error)
       setLoading(false)
       return { error: 'An unexpected error occurred' }
     }

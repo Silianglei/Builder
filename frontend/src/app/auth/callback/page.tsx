@@ -14,12 +14,7 @@ function AuthCallbackContent() {
         // Get the hash from the URL (for implicit flow)
         const hash = window.location.hash
         
-        // Log what we received
-        console.log('Auth callback received:', {
-          hash: hash,
-          search: window.location.search,
-          hasAccessToken: hash.includes('access_token')
-        })
+        // Process the authentication callback
 
         // If we have a hash with access_token, Supabase will handle it automatically
         if (hash && hash.includes('access_token')) {
@@ -28,10 +23,8 @@ function AuthCallbackContent() {
           
           // Check if we now have a session
           const { data: { session } } = await supabase.auth.getSession()
-          console.log('Session after auth:', session)
           
           if (session?.provider_token && session.user?.app_metadata?.provider === 'github') {
-            console.log('Storing GitHub token...')
             
             try {
               const response = await fetch('/api/github/token', {
@@ -49,12 +42,10 @@ function AuthCallbackContent() {
               })
               
               if (!response.ok) {
-                console.error('Failed to store GitHub token:', await response.text())
-              } else {
-                console.log('GitHub token stored successfully')
+                // Failed to store GitHub token, but continue with auth flow
               }
             } catch (error) {
-              console.error('Error storing GitHub token:', error)
+              // Failed to store GitHub token, but continue with auth flow
             }
           }
         }
@@ -68,7 +59,6 @@ function AuthCallbackContent() {
         // Navigate to the target
         router.push(redirectTo)
       } catch (error) {
-        console.error('Error in auth callback:', error)
         router.push('/')
       }
     }

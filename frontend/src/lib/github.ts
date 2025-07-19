@@ -6,12 +6,10 @@ export async function getGitHubToken(): Promise<string | null> {
     const { data: { session }, error: sessionError } = await supabase.auth.getSession()
     
     if (sessionError) {
-      console.error('Error getting session:', sessionError)
       return null
     }
     
     if (!session) {
-      console.log('No active session')
       return null
     }
 
@@ -20,7 +18,6 @@ export async function getGitHubToken(): Promise<string | null> {
     const hasGitHubLinked = providers.includes('github')
     
     if (!hasGitHubLinked) {
-      console.log('User has not linked GitHub account')
       return null
     }
 
@@ -28,7 +25,6 @@ export async function getGitHubToken(): Promise<string | null> {
     if (session.provider_token) {
       // Verify it's actually a GitHub token (should start with 'gho_' or 'ghp_')
       if (session.provider_token.startsWith('gho_') || session.provider_token.startsWith('ghp_')) {
-        console.log('Found valid GitHub token in session')
         
         // Store it for future use if we're coming from GitHub auth
         if (session.user?.app_metadata?.provider === 'github') {
@@ -36,7 +32,7 @@ export async function getGitHubToken(): Promise<string | null> {
             // Get the access token for authorization
             const { data: { session: authSession } } = await supabase.auth.getSession()
             
-            const response = await fetch('/api/github/token', {
+            await fetch('/api/github/token', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -49,14 +45,8 @@ export async function getGitHubToken(): Promise<string | null> {
                 github_username: session.user.user_metadata?.user_name || session.user.user_metadata?.preferred_username
               }),
             })
-            
-            if (!response.ok) {
-              console.error('Failed to store GitHub token')
-            } else {
-              console.log('GitHub token stored for future use')
-            }
           } catch (error) {
-            console.error('Error storing GitHub token:', error)
+            // Token storage failed, but continue
           }
         }
         
@@ -65,7 +55,6 @@ export async function getGitHubToken(): Promise<string | null> {
     }
 
     // If no token in session, try to retrieve from storage
-    console.log('No token in session, checking stored tokens...')
     try {
       const response = await fetch('/api/github/token', {
         method: 'GET',
@@ -77,21 +66,14 @@ export async function getGitHubToken(): Promise<string | null> {
       
       if (response.ok) {
         const data = await response.json()
-        console.log('Retrieved stored GitHub token')
         return data.token
-      } else if (response.status === 404) {
-        console.log('No stored GitHub token found')
-      } else {
-        console.error('Error retrieving stored token:', response.statusText)
       }
     } catch (error) {
-      console.error('Error fetching stored token:', error)
+      // Failed to fetch stored token
     }
 
-    console.log('No GitHub token available. User may need to re-authenticate with GitHub.')
     return null
   } catch (error) {
-    console.error('Error getting GitHub token:', error)
     return null
   }
 }
