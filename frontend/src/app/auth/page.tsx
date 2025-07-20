@@ -21,6 +21,12 @@ export default function AuthPage() {
       localStorage.removeItem('redirectAfterAuth')
       router.push(redirectTo)
     }
+    
+    // Check for error in URL params (from failed auth callback)
+    const errorParam = searchParams.get('error')
+    if (errorParam) {
+      setError(decodeURIComponent(errorParam))
+    }
   }, [loading, user, router, searchParams])
 
   const handleSendMagicLink = async (e: React.FormEvent) => {
@@ -42,8 +48,8 @@ export default function AuthPage() {
       if (error) throw error
 
       setEmailSent(true)
-    } catch (err: any) {
-      setError(err.message || "Failed to send magic link")
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to send magic link")
     } finally {
       setIsLoading(false)
     }

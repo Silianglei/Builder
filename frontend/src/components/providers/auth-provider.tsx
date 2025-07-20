@@ -124,6 +124,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.removeItem('redirectAfterAuth')
       // Keep projectConfig - user might want to continue their draft later
       
+      // Clear ALL Supabase-related items from localStorage
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('sb-') || key.includes('supabase')) {
+          localStorage.removeItem(key)
+        }
+      })
+      
+      // Clear session storage completely
+      sessionStorage.clear()
+      
       // Clear all cookies (in case any are set)
       document.cookie.split(";").forEach(function(c) { 
         document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 

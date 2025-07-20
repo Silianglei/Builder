@@ -25,15 +25,10 @@ export function useRepositories() {
       const githubToken = await getGitHubToken()
       
       if (!githubToken) {
-        // Check if user has GitHub linked
-        const providers = session.user?.app_metadata?.providers || []
-        const hasGitHubLinked = providers.includes('github')
-        
-        if (!hasGitHubLinked) {
-          setError('Please connect your GitHub account to continue.')
-        } else {
-          setError('Unable to access GitHub. Please sign in with GitHub again.')
-        }
+        // Don't show error, just set empty repositories
+        // This is expected on initial sign in before GitHub is connected
+        setRepositories([])
+        setLoading(false)
         return
       }
 
