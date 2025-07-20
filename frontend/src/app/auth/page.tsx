@@ -95,34 +95,18 @@ export default function AuthPage() {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-500/20 rounded-full filter blur-3xl"></div>
       </div>
 
-      <style jsx>{`
-        @keyframes slide-up {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        
-        .slide-up-enter {
-          animation: slide-up 0.4s ease-out forwards;
-        }
-      `}</style>
 
       {/* Main Content */}
       <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-6">
         {/* Logo */}
-        <Link href="/" className="mb-12 slide-up-enter">
+        <Link href="/" className="mb-12">
           <h1 className="text-4xl font-bold text-white">
             5AM Founder
           </h1>
         </Link>
 
         {/* Auth Container */}
-        <div className="w-full max-w-md slide-up-enter" style={{ animationDelay: '0.1s' }}>
+        <div className="w-full max-w-md">
           <div className="bg-white/[0.02] backdrop-blur-sm rounded-2xl border border-white/[0.05] p-8">
             {!emailSent ? (
               <>
@@ -258,7 +242,7 @@ export default function AuthPage() {
         </div>
 
         {/* Terms and Privacy */}
-        <div className="mt-12 text-center slide-up-enter" style={{ animationDelay: '0.2s' }}>
+        <div className="mt-12 text-center">
           <p className="text-xs text-gray-500">
             By continuing, you agree to our{" "}
             <Link href="/terms" className="text-gray-400 hover:text-white transition-colors">

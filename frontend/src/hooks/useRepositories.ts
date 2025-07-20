@@ -44,13 +44,26 @@ export function useRepositories() {
 
       if (!response.ok) {
         const errorData = await response.json()
+        
+        // If it's a 401 error, the GitHub token is invalid/expired
+        // Don't show an error, just return empty repositories
+        if (response.status === 401) {
+          console.log('GitHub token is invalid or expired')
+          setRepositories([])
+          setLoading(false)
+          return
+        }
+        
         throw new Error(errorData.detail || 'Failed to fetch repositories')
       }
 
       const data = await response.json()
       setRepositories(data)
     } catch (err: any) {
-      setError(err.message)
+      // Only show error if it's not a GitHub auth issue
+      if (!err.message.includes('GitHub') && !err.message.includes('401')) {
+        setError(err.message)
+      }
       console.error('Failed to fetch repositories:', err)
     } finally {
       setLoading(false)

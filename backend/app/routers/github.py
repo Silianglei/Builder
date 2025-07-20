@@ -388,6 +388,22 @@ async def list_repositories(
         
         return repos
         
+    except GithubException as e:
+        if e.status == 401:
+            raise HTTPException(
+                status_code=401,
+                detail="GitHub authentication failed. The token may be expired or invalid."
+            )
+        elif e.status == 403:
+            raise HTTPException(
+                status_code=403,
+                detail="Insufficient permissions to access repositories."
+            )
+        else:
+            raise HTTPException(
+                status_code=e.status,
+                detail=f"GitHub API error: {e.data.get('message', str(e))}"
+            )
     except Exception as e:
         raise HTTPException(
             status_code=500,

@@ -8,24 +8,93 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState, useRef, useEffect } from 'react'
 import { ChevronDown, Settings, LogOut, User, Plus } from 'lucide-react'
-import { DebugGitHubToken } from '@/components/debug-github-token'
 import { getGitHubToken } from '@/lib/github'
 
 // UserDropdown Component
 function UserDropdown({ user, signOut }: { user: any; signOut: () => void }) {
   const [isOpen, setIsOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState<'menu' | 'integrations'>('menu')
+  const [hasGitHubToken, setHasGitHubToken] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsOpen(false)
+        // Reset to menu tab when closing
+        setTimeout(() => setActiveTab('menu'), 200)
       }
     }
 
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  // Check for GitHub token when dropdown opens
+  useEffect(() => {
+    if (isOpen) {
+      getGitHubToken().then(token => {
+        setHasGitHubToken(!!token)
+      })
+    }
+  }, [isOpen])
+
+  // Integration configuration
+  const integrations = [
+    {
+      name: 'GitHub',
+      icon: (
+        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+        </svg>
+      ),
+      isConnected: hasGitHubToken,
+      description: 'Repository management'
+    },
+    {
+      name: 'Google Developer',
+      icon: (
+        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+          <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+          <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+          <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+        </svg>
+      ),
+      isConnected: false,
+      description: 'OAuth & APIs'
+    },
+    {
+      name: 'Stripe',
+      icon: (
+        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.591-7.305z"/>
+        </svg>
+      ),
+      isConnected: false,
+      description: 'Payment processing'
+    },
+    {
+      name: 'Supabase',
+      icon: (
+        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M11.9 1.036c-.015-.986-1.26-1.41-1.874-.637L.764 12.05C-.33 13.427.65 15.455 2.409 15.455h9.579l.003.025.088 5.484c.015.986 1.26 1.41 1.874.637l9.263-11.652c1.093-1.375.113-3.403-1.646-3.403h-9.58l-.002-.025-.088-5.485z"/>
+        </svg>
+      ),
+      isConnected: true, // Already connected via auth
+      description: 'Database & Auth'
+    },
+    {
+      name: 'Vercel',
+      icon: (
+        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M24 22.525H0l12-21.05 12 21.05z"/>
+        </svg>
+      ),
+      isConnected: false,
+      description: 'Deployment platform'
+    }
+  ]
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -51,26 +120,84 @@ function UserDropdown({ user, signOut }: { user: any; signOut: () => void }) {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-48 glass-card rounded-xl overflow-hidden animate-slide-up">
-          <div className="p-2">
-            <Link
-              href="/settings"
-              className="flex items-center space-x-3 px-4 py-2.5 rounded-lg transition-all hover:bg-white/5"
-              onClick={() => setIsOpen(false)}
-            >
-              <Settings className="w-4 h-4 text-gray-400" />
-              <span className="text-sm">Settings</span>
-            </Link>
+        <div className="absolute right-0 mt-2 w-72 glass-card rounded-xl overflow-hidden animate-slide-up">
+          {/* Tab Navigation */}
+          <div className="flex border-b border-white/5">
             <button
-              onClick={() => {
-                setIsOpen(false)
-                signOut()
-              }}
-              className="w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg transition-all hover:bg-white/5 text-left"
+              onClick={() => setActiveTab('menu')}
+              className={`flex-1 px-4 py-2.5 text-sm font-medium transition-all ${
+                activeTab === 'menu' 
+                  ? 'text-white border-b-2 border-blue-500' 
+                  : 'text-gray-400 hover:text-white'
+              }`}
             >
-              <LogOut className="w-4 h-4 text-gray-400" />
-              <span className="text-sm">Sign Out</span>
+              Menu
             </button>
+            <button
+              onClick={() => setActiveTab('integrations')}
+              className={`flex-1 px-4 py-2.5 text-sm font-medium transition-all ${
+                activeTab === 'integrations' 
+                  ? 'text-white border-b-2 border-blue-500' 
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              Integrations
+            </button>
+          </div>
+
+          {/* Tab Content */}
+          <div className="p-2">
+            {activeTab === 'menu' ? (
+              <>
+                <Link
+                  href="/settings"
+                  className="flex items-center space-x-3 px-4 py-2.5 rounded-lg transition-all hover:bg-white/5"
+                  onClick={() => setIsOpen(false)}
+                >
+                  <Settings className="w-4 h-4 text-gray-400" />
+                  <span className="text-sm">Settings</span>
+                </Link>
+                <button
+                  onClick={() => {
+                    setIsOpen(false)
+                    signOut()
+                  }}
+                  className="w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg transition-all hover:bg-white/5 text-left"
+                >
+                  <LogOut className="w-4 h-4 text-gray-400" />
+                  <span className="text-sm">Sign Out</span>
+                </button>
+              </>
+            ) : (
+              <div className="space-y-1">
+                {integrations.map((integration) => (
+                  <div
+                    key={integration.name}
+                    className="flex items-center justify-between px-4 py-3 rounded-lg hover:bg-white/5 transition-all"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className={`${integration.isConnected ? 'text-green-500' : 'text-gray-400'}`}>
+                        {integration.icon}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">{integration.name}</p>
+                        <p className="text-xs text-gray-400">{integration.description}</p>
+                      </div>
+                    </div>
+                    {integration.isConnected ? (
+                      <div className="flex items-center space-x-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span className="text-xs font-medium text-green-500">Connected</span>
+                      </div>
+                    ) : (
+                      <button className="text-xs font-medium px-3 py-1 bg-white/5 hover:bg-white/10 text-white rounded-full transition-all">
+                        Connect
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -82,7 +209,6 @@ export default function DashboardPage() {
   const { user, signOut } = useAuth()
   const { repositories, loading, error, refresh, deleteRepository } = useRepositories()
   const router = useRouter()
-  const [hasGitHubToken, setHasGitHubToken] = useState<boolean | null>(null)
   
   // Check for redirect after auth or if we need to refresh
   useEffect(() => {
@@ -122,15 +248,6 @@ export default function DashboardPage() {
       }, 500)
     }
   }, [router, refresh])
-
-  // Check for GitHub token
-  useEffect(() => {
-    const checkGitHubToken = async () => {
-      const token = await getGitHubToken()
-      setHasGitHubToken(!!token)
-    }
-    checkGitHubToken()
-  }, [])
   
   // Filter only 5AM Founder repositories
   const filteredRepos = repositories
@@ -259,12 +376,6 @@ export default function DashboardPage() {
               {error ? (
                 <div className="glass-card rounded-xl p-6 border-red-500/20 bg-red-900/10">
                   <p className="text-red-400 font-medium">Error: {error}</p>
-                  {error.includes('GitHub') && (
-                    <div className="mt-4">
-                      <p className="text-sm text-gray-400 mb-4">Debug Information:</p>
-                      <DebugGitHubToken />
-                    </div>
-                  )}
                 </div>
               ) : (
                 <RepositoryList 
@@ -278,52 +389,17 @@ export default function DashboardPage() {
               {/* Empty State */}
               {!loading && filteredRepos.length === 0 && !error && (
                 <div className="text-center py-20">
-                  {hasGitHubToken === false ? (
-                    <div className="mb-8">
-                      <div className="w-24 h-24 rounded-full bg-gradient-to-br from-gray-600 to-gray-700 mx-auto flex items-center justify-center mb-6">
-                        <svg className="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-                        </svg>
-                      </div>
-                      <h3 className="text-2xl font-bold mb-3">Connect GitHub to view projects</h3>
-                      <p className="text-gray-400 max-w-md mx-auto mb-6">
-                        You'll need to connect your GitHub account when creating your first project to see repositories here.
-                      </p>
-                      <div className="flex flex-col items-center gap-3">
-                        <Link
-                          href="/newproject"
-                          className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all"
-                        >
-                          <Plus className="w-5 h-5" />
-                          Create Your First Project
-                        </Link>
-                        {process.env.NODE_ENV === 'development' && (
-                          <div className="mt-4">
-                            <details className="inline-block">
-                              <summary className="cursor-pointer text-sm text-gray-500 hover:text-gray-400 transition-colors">
-                                Debug Info
-                              </summary>
-                              <div className="mt-2">
-                                <DebugGitHubToken />
-                              </div>
-                            </details>
-                          </div>
-                        )}
-                      </div>
+                  <div className="mb-8">
+                    <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 mx-auto flex items-center justify-center mb-6">
+                      <svg className="w-12 h-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13.5 3H12H8C6.34315 3 5 4.34315 5 6V18C5 19.6569 6.34315 21 8 21H16C17.6569 21 19 19.6569 19 18V8.625M13.5 3L19 8.625M13.5 3V8.625H19" />
+                      </svg>
                     </div>
-                  ) : (
-                    <div className="mb-8">
-                      <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 mx-auto flex items-center justify-center mb-6">
-                        <svg className="w-12 h-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13.5 3H12H8C6.34315 3 5 4.34315 5 6V18C5 19.6569 6.34315 21 8 21H16C17.6569 21 19 19.6569 19 18V8.625M13.5 3L19 8.625M13.5 3V8.625H19" />
-                        </svg>
-                      </div>
-                      <h3 className="text-2xl font-bold mb-3">No projects yet</h3>
-                      <p className="text-gray-400 max-w-md mx-auto">
-                        Create your first project with 5AM Founder to see it here.
-                      </p>
-                    </div>
-                  )}
+                    <h3 className="text-2xl font-bold mb-3">No projects yet</h3>
+                    <p className="text-gray-400 max-w-md mx-auto">
+                      Create your first project with 5AM Founder to see it here.
+                    </p>
+                  </div>
                 </div>
               )}
             </div>
