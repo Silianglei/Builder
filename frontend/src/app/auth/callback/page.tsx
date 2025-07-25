@@ -4,12 +4,12 @@ import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Session } from '@supabase/supabase-js'
+import { AuthLoading } from '@/components/auth/auth-loading'
 
 function AuthCallbackContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [error, setError] = useState<string | null>(null)
-  const [isRetrying, setIsRetrying] = useState(false)
 
   const storeGitHubToken = async (session: Session, retryCount = 0): Promise<boolean> => {
     const maxRetries = 3
@@ -105,9 +105,7 @@ function AuthCallbackContent() {
               (session.provider_token.startsWith('gho_') || 
                session.provider_token.startsWith('ghp_') ||
                session.user?.app_metadata?.providers?.includes('github'))) {
-            setIsRetrying(true)
             tokenStored = await storeGitHubToken(session)
-            setIsRetrying(false)
             
             if (!tokenStored) {
               // Show warning but continue - user is authenticated
@@ -151,55 +149,28 @@ function AuthCallbackContent() {
     handleCallback()
   }, [router, searchParams])
 
-  return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white flex items-center justify-center">
-      <div className="text-center max-w-md px-6">
-        {error ? (
-          <>
-            <div className="mb-4">
-              <svg className="h-12 w-12 text-yellow-500 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-            </div>
-            <p className="text-lg text-white mb-2">{error}</p>
-            <p className="text-sm text-gray-400">Redirecting...</p>
-          </>
-        ) : (
-          <>
-            <div className="mb-4">
-              <svg className="animate-spin h-12 w-12 text-blue-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-            </div>
-            <p className="text-lg text-gray-400">
-              {isRetrying ? 'Setting up GitHub integration...' : 'Authenticating...'}
-            </p>
-            <p className="text-sm text-gray-600 mt-2">
-              If you are not redirected, <a href="/" className="text-blue-400 hover:underline">click here</a>.
-            </p>
-          </>
-        )}
+  if (error) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] text-white flex items-center justify-center">
+        <div className="text-center max-w-md px-6">
+          <div className="mb-4">
+            <svg className="h-12 w-12 text-yellow-500 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <p className="text-lg text-white mb-2">{error}</p>
+          <p className="text-sm text-gray-400">Redirecting...</p>
+        </div>
       </div>
-    </div>
-  )
+    )
+  }
+
+  return <AuthLoading />
 }
 
 export default function AuthCallback() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-[#0a0a0a] text-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="mb-4">
-            <svg className="animate-spin h-12 w-12 text-blue-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-          </div>
-          <p className="text-lg text-gray-400">Loading...</p>
-        </div>
-      </div>
-    }>
+    <Suspense fallback={<AuthLoading />}>
       <AuthCallbackContent />
     </Suspense>
   )

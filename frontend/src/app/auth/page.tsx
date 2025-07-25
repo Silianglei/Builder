@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
 import Link from "next/link"
+import { AuthLoading } from "@/components/auth/auth-loading"
 
 function AuthPageContent() {
   const router = useRouter()
@@ -74,13 +75,7 @@ function AuthPageContent() {
 
   // Show loading state while checking authentication
   if (loading) {
-    return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
-        <div className="text-white">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
-        </div>
-      </div>
-    )
+    return <AuthLoading />
   }
 
   // Don't render the auth page if user is authenticated (prevents flash)
@@ -261,13 +256,7 @@ function AuthPageContent() {
 
 export default function AuthPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
-        <div className="text-white">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
-        </div>
-      </div>
-    }>
+    <Suspense fallback={<AuthLoading />}>
       <AuthPageContent />
     </Suspense>
   )
