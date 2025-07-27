@@ -1,6 +1,7 @@
 'use client'
 
-import { GitBranch, Lock, Unlock, ArrowRight } from 'lucide-react'
+import { GitBranch, Lock, Unlock, ArrowRight, Trash2 } from 'lucide-react'
+import { useState } from 'react'
 
 export interface Repository {
   id: number
@@ -20,9 +21,22 @@ export interface Repository {
 interface RepositoryCardProps {
   repository: Repository
   onClick: () => void
+  onDelete?: (repository: Repository) => void
+  canDelete?: boolean
 }
 
-export default function RepositoryCard({ repository, onClick }: RepositoryCardProps) {
+export default function RepositoryCard({ repository, onClick, onDelete, canDelete = false }: RepositoryCardProps) {
+  const [isDeleting, setIsDeleting] = useState(false)
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation() // Prevent card click
+    if (onDelete && !isDeleting) {
+      setIsDeleting(true)
+      await onDelete(repository)
+      setIsDeleting(false)
+    }
+  }
+
   return (
     <div
       onClick={onClick}
@@ -56,8 +70,24 @@ export default function RepositoryCard({ repository, onClick }: RepositoryCardPr
           </div>
         </div>
         
-        <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-all">
-          <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-white transition-all group-hover:translate-x-0.5" />
+        <div className="flex items-center space-x-2">
+          {canDelete && onDelete && (
+            <button
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="w-8 h-8 rounded-lg bg-red-500/10 hover:bg-red-500/20 flex items-center justify-center transition-all border border-red-500/20 hover:border-red-500/30"
+              title="Delete repository"
+            >
+              {isDeleting ? (
+                <div className="w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Trash2 className="w-4 h-4 text-red-400" />
+              )}
+            </button>
+          )}
+          <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-all">
+            <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-white transition-all group-hover:translate-x-0.5" />
+          </div>
         </div>
       </div>
 

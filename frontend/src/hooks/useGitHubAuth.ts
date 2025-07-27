@@ -2,19 +2,78 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { getGitHubToken } from '@/lib/github'
+
+interface GitHubAuthState {
+  isConnected: boolean | null
+  hasRepoScope: boolean
+  hasDeleteRepoScope: boolean
+  scopes: string[]
+  githubUsername: string | null
+}
 
 export function useGitHubAuth() {
-  const [isConnected, setIsConnected] = useState<boolean | null>(null)
+  const [authState, setAuthState] = useState<GitHubAuthState>({
+    isConnected: null,
+    hasRepoScope: false,
+    hasDeleteRepoScope: false,
+    scopes: [],
+    githubUsername: null
+  })
   const [isReconnecting, setIsReconnecting] = useState(false)
 
   const checkConnection = async () => {
-    const token = await getGitHubToken()
-    setIsConnected(!!token)
-    return !!token
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) {
+        setAuthState({
+          isConnected: false,
+          hasRepoScope: false,
+          hasDeleteRepoScope: false,
+          scopes: [],
+          githubUsername: null
+        })
+        return false
+      }
+
+      const response = await fetch('/api/github/token', {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      })
+
+      if (!response.ok) {
+        setAuthState({
+          isConnected: false,
+          hasRepoScope: false,
+          hasDeleteRepoScope: false,
+          scopes: [],
+          githubUsername: null
+        })
+        return false
+      }
+
+      const data = await response.json()
+      setAuthState({
+        isConnected: true,
+        hasRepoScope: data.has_repo_scope || false,
+        hasDeleteRepoScope: data.scopes ? data.scopes.includes('delete_repo') : false,
+        scopes: data.scopes || [],
+        githubUsername: data.github_username
+      })
+      return true
+    } catch (error) {
+      console.error('Error checking GitHub connection:', error)
+      setAuthState({
+        isConnected: false,
+        hasRepoScope: false,
+        scopes: [],
+        githubUsername: null
+      })
+      return false
+    }
   }
 
-  const reconnectGitHub = async () => {
+  const reconnectGitHub = async (requireRepoScope: boolean = true) => {
     if (isReconnecting) return
     
     setIsReconnecting(true)
@@ -24,12 +83,20 @@ export function useGitHubAuth() {
       const currentPath = window.location.pathname + window.location.search
       localStorage.setItem('redirectAfterAuth', currentPath)
       
-      // Trigger GitHub OAuth
+      // Force sign out first to ensure fresh OAuth flow
+      await supabase.auth.signOut()
+      
+      // Trigger GitHub OAuth with appropriate scopes
+      const scopes = requireRepoScope ? 'repo delete_repo user read:org' : 'user:email'
+      
       await supabase.auth.signInWithOAuth({
         provider: 'github',
         options: {
-          scopes: 'repo user read:org',
-          redirectTo: `${window.location.origin}/auth/callback?redirect_to=${encodeURIComponent(currentPath)}`
+          scopes,
+          redirectTo: `${window.location.origin}/auth/callback?redirect_to=${encodeURIComponent(currentPath)}`,
+          queryParams: {
+            prompt: 'consent' // Force GitHub to show authorization page
+          }
         }
       })
     } catch (error) {
@@ -48,7 +115,11 @@ export function useGitHubAuth() {
   }, [])
 
   return {
-    isConnected,
+    isConnected: authState.isConnected,
+    hasRepoScope: authState.hasRepoScope,
+    hasDeleteRepoScope: authState.hasDeleteRepoScope,
+    scopes: authState.scopes,
+    githubUsername: authState.githubUsername,
     isReconnecting,
     checkConnection,
     reconnectGitHub

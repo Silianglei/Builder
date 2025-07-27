@@ -3,7 +3,9 @@
 import { useState } from 'react'
 import RepositoryCard, { Repository } from './repository-card'
 import InstallationModal from './installation-modal'
+import DeleteConfirmationModal from './delete-confirmation-modal'
 import { Loader2 } from 'lucide-react'
+import { useGitHubAuth } from '@/hooks/useGitHubAuth'
 
 interface RepositoryListProps {
   repositories: Repository[]
@@ -19,33 +21,31 @@ export default function RepositoryList({
   onDelete 
 }: RepositoryListProps) {
   const [selectedRepository, setSelectedRepository] = useState<Repository | null>(null)
+  const [repositoryToDelete, setRepositoryToDelete] = useState<Repository | null>(null)
   const [deleting, setDeleting] = useState(false)
-  const [deleteError, setDeleteError] = useState<string | null>(null)
+  const { scopes } = useGitHubAuth()
+  
+  const hasDeletePermission = scopes.includes('delete_repo')
 
-  const handleDelete = async () => {
-    if (!selectedRepository || !onDelete) return
+  const handleCardClick = (repo: Repository) => {
+    setSelectedRepository(repo)
+  }
+
+  const handleDeleteRequest = (repo: Repository) => {
+    setRepositoryToDelete(repo)
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (!repositoryToDelete || !onDelete) return
     
     setDeleting(true)
-    setDeleteError(null)
     try {
-      await onDelete(selectedRepository)
-      setSelectedRepository(null)
+      await onDelete(repositoryToDelete)
+      setRepositoryToDelete(null)
       if (onRefresh) onRefresh()
     } catch (error) {
       console.error('Failed to delete repository:', error)
-      const errorMessage = error instanceof Error ? error.message : 'Failed to delete repository'
-      
-      // Check if it's a scope permission error
-      if (errorMessage.includes('delete_repo')) {
-        setDeleteError(
-          "Repository deletion requires additional permissions. To enable deletion, you'll need to:\n" +
-          "1. Update your Supabase GitHub OAuth settings to include 'delete_repo' scope\n" +
-          "2. Sign out and reconnect your GitHub account\n" +
-          "3. Grant the additional permission when prompted by GitHub"
-        )
-      } else {
-        setDeleteError(errorMessage)
-      }
+      // Error handling is done in the parent component
     } finally {
       setDeleting(false)
     }
@@ -70,17 +70,24 @@ export default function RepositoryList({
           <RepositoryCard
             key={repo.id}
             repository={repo}
-            onClick={() => setSelectedRepository(repo)}
+            onClick={() => handleCardClick(repo)}
+            onDelete={onDelete ? handleDeleteRequest : undefined}
+            canDelete={hasDeletePermission && !!onDelete}
           />
         ))}
       </div>
 
       <InstallationModal
         repository={selectedRepository}
-        onClose={() => {
-          setSelectedRepository(null)
-          setDeleteError(null)
-        }}
+        onClose={() => setSelectedRepository(null)}
+      />
+      
+      <DeleteConfirmationModal
+        isOpen={!!repositoryToDelete}
+        onClose={() => setRepositoryToDelete(null)}
+        onConfirm={handleDeleteConfirm}
+        repository={repositoryToDelete}
+        isDeleting={deleting}
       />
     </>
   )

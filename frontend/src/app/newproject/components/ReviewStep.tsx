@@ -1,7 +1,8 @@
-import React from "react"
-import { Globe, Lock, Shield, Database, CreditCard, Check, Edit2, Package, ChevronRight } from "lucide-react"
+import React, { useEffect } from "react"
+import { Globe, Lock, Shield, Database, CreditCard, Check, Edit2, Package, ChevronRight, AlertCircle, Github } from "lucide-react"
 import { ProjectConfig } from "../page"
 import { User } from "@/types/auth"
+import { useGitHubAuth } from "@/hooks/useGitHubAuth"
 
 interface ReviewStepProps {
   config: ProjectConfig
@@ -10,6 +11,15 @@ interface ReviewStepProps {
 }
 
 export default function ReviewStep({ config, user, onEdit }: ReviewStepProps) {
+  const { isConnected, hasRepoScope, githubUsername, checkConnection, reconnectGitHub, isReconnecting } = useGitHubAuth()
+  
+  useEffect(() => {
+    // Check GitHub connection when component mounts
+    if (user) {
+      checkConnection()
+    }
+  }, [user])
+  
   const getSelectedFeatures = () => {
     const features = []
     if (config.integrations.supabaseAuth) {
@@ -104,6 +114,68 @@ export default function ReviewStep({ config, user, onEdit }: ReviewStepProps) {
           )}
         </div>
       </div>
+
+      {/* GitHub Permissions Status */}
+      {user && (
+        <div className={`rounded-xl border p-6 ${
+          hasRepoScope 
+            ? 'border-green-500/20 bg-gradient-to-br from-green-500/10 to-transparent' 
+            : 'border-yellow-500/20 bg-gradient-to-br from-yellow-500/10 to-transparent'
+        }`}>
+          <div className="flex items-start justify-between">
+            <div className="flex items-start space-x-4">
+              <div className={`p-2 rounded-lg ${
+                hasRepoScope ? 'bg-green-500/20' : 'bg-yellow-500/20'
+              }`}>
+                <Github className={`w-6 h-6 ${
+                  hasRepoScope ? 'text-green-400' : 'text-yellow-400'
+                }`} />
+              </div>
+              <div>
+                <h3 className="font-semibold mb-1">GitHub Integration</h3>
+                {isConnected === null ? (
+                  <p className="text-sm text-gray-400">Checking permissions...</p>
+                ) : isConnected ? (
+                  <>
+                    {hasRepoScope ? (
+                      <>
+                        <p className="text-sm text-green-400 mb-2">
+                          ✓ Repository creation & deletion enabled
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          Connected as {githubUsername}
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-sm text-yellow-400 mb-2">
+                          <AlertCircle className="w-4 h-4 inline mr-1" />
+                          Repository permissions required
+                        </p>
+                        <p className="text-xs text-gray-400 mb-3">
+                          To create and delete repositories, you need to grant additional permissions
+                        </p>
+                        <button
+                          onClick={() => reconnectGitHub(true)}
+                          disabled={isReconnecting}
+                          className="flex items-center space-x-2 px-4 py-2 bg-yellow-500/20 hover:bg-yellow-500/30 border border-yellow-500/30 rounded-lg text-sm font-medium text-yellow-400 transition-all"
+                        >
+                          <Github className="w-4 h-4" />
+                          <span>{isReconnecting ? 'Connecting...' : 'Grant Repository Access'}</span>
+                        </button>
+                      </>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-sm text-gray-400">
+                    Not connected to GitHub
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Selected Features */}
       {selectedFeatures.length > 0 && (

@@ -314,7 +314,26 @@ async def create_repository(
     except GithubException as e:
         error_message = e.data.get('message', str(e)) if hasattr(e, 'data') else str(e)
         
-        if e.status == 422:
+        if e.status == 404:
+            # Check current OAuth scopes
+            import requests
+            scope_check = requests.get(
+                "https://api.github.com/user",
+                headers={"Authorization": f"Bearer {auth_header}"}
+            )
+            current_scopes = scope_check.headers.get("x-oauth-scopes", "none")
+            
+            if "repo" not in current_scopes:
+                raise HTTPException(
+                    status_code=403,
+                    detail=f"Insufficient GitHub permissions. Your token has scopes: '{current_scopes}'. To create repositories, you need to re-authenticate with GitHub and grant 'repo' permissions."
+                )
+            else:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"GitHub API error: {error_message}"
+                )
+        elif e.status == 422:
             # Check if it's a name collision
             if 'already exists' in error_message.lower():
                 raise HTTPException(

@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
     // Retrieve stored GitHub token
     const { data, error } = await supabaseAdmin
       .from('github_tokens')
-      .select('access_token, expires_at, github_username')
+      .select('access_token, expires_at, github_username, scopes')
       .eq('user_id', user.id)
       .single()
 
@@ -67,7 +67,9 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ 
       token: data.access_token,
-      github_username: data.github_username 
+      github_username: data.github_username,
+      scopes: data.scopes || [],
+      has_repo_scope: data.scopes ? data.scopes.includes('repo') : false
     })
   } catch (error) {
     console.error('Error in GitHub token API:', error)
@@ -101,7 +103,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
     }
 
-    // Store or update GitHub token
+    // Get the actual scopes from GitHub API
+    const scopeResponse = await fetch('https://api.github.com/user', {
+      headers: {
+        'Authorization': `Bearer ${access_token}`,
+        'Accept': 'application/vnd.github.v3+json'
+      }
+    })
+    
+    const scopeHeader = scopeResponse.headers.get('x-oauth-scopes') || ''
+    const scopes = scopeHeader.split(',').map(s => s.trim()).filter(s => s)
+    
+    // Store or update GitHub token with actual scopes
     const { data, error } = await supabaseAdmin
       .from('github_tokens')
       .upsert({
@@ -111,7 +124,7 @@ export async function POST(request: NextRequest) {
         github_username,
         expires_at,
         token_type: 'bearer',
-        scopes: ['repo', 'user', 'read:org'],
+        scopes: scopes,
         updated_at: new Date().toISOString()
       }, {
         onConflict: 'user_id'

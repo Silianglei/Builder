@@ -186,7 +186,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       
       // Determine scopes based on whether we need repo access
-      const scopes = requestRepoScope ? 'repo user read:org' : 'user:email'
+      const scopes = requestRepoScope ? 'repo delete_repo user read:org' : 'user:email'
       
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'github',
