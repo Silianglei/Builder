@@ -22,21 +22,12 @@ export function useRepositories() {
         return
       }
 
-      const githubToken = await getGitHubToken()
-      
-      if (!githubToken) {
-        // Don't show error, just set empty repositories
-        // This is expected on initial sign in before GitHub is connected
-        setRepositories([])
-        setLoading(false)
-        return
-      }
-
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/github/repositories`, {
+      // Fetch projects from our database instead of GitHub
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+      const response = await fetch(`${apiUrl}/api/v1/projects`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
-          'X-GitHub-Token': githubToken,
           'Content-Type': 'application/json'
         },
         credentials: 'include'
@@ -45,26 +36,26 @@ export function useRepositories() {
       if (!response.ok) {
         const errorData = await response.json()
         
-        // If it's a 401 error, the GitHub token is invalid/expired
-        // Don't show an error, just return empty repositories
+        // Handle specific error cases
         if (response.status === 401) {
-          console.log('GitHub token is invalid or expired')
-          setRepositories([])
-          setLoading(false)
+          setError('Your session has expired. Please sign in again.')
           return
         }
         
-        throw new Error(errorData.detail || 'Failed to fetch repositories')
+        if (response.status === 503) {
+          setError('Database service is temporarily unavailable.')
+          return
+        }
+        
+        throw new Error(errorData.detail || 'Failed to fetch projects')
       }
 
       const data = await response.json()
+      // The data is already in the correct format from our API
       setRepositories(data)
     } catch (err: any) {
-      // Only show error if it's not a GitHub auth issue
-      if (!err.message.includes('GitHub') && !err.message.includes('401')) {
-        setError(err.message)
-      }
-      console.error('Failed to fetch repositories:', err)
+      setError(err.message)
+      console.error('Failed to fetch projects:', err)
     } finally {
       setLoading(false)
     }

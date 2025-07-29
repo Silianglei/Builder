@@ -5,10 +5,12 @@ from pydantic import BaseModel
 import base64
 import time
 import asyncio
+from datetime import datetime
 
 from ..auth.auth import get_current_user
 from ..services.template_service import template_service
 from ..websocket_manager import manager
+from ..db.supabase_client import supabase_client
 
 router = APIRouter(prefix="/api/v1/github", tags=["github"])
 
@@ -300,6 +302,46 @@ async def create_repository(
         # Refresh repo data to get updated topics
         repo = g.get_repo(repo.full_name)
         
+        # Insert project into Supabase database
+        try:
+            if supabase_client:
+                project_data = {
+                    "user_id": current_user.get("id"),
+                    "name": repo.name,
+                    "description": repo.description or f"A new SaaS project created with 5AM Founder",
+                    "github_repo_url": repo.html_url,
+                    "github_repo_id": repo.id,
+                    "is_private": repo.private,
+                    "github_topics": ["5am-founder", "nextjs", "supabase", "typescript"],
+                    "template_version": "1.0.0",
+                    "has_supabase_db": False,  # Will be updated when Supabase is configured
+                    "auth_providers": [],      # Will be updated when auth is configured
+                    "has_stripe": False,       # Will be updated when Stripe is configured
+                    "vercel_deployed": False,  # Will be updated when deployed
+                    "is_active": True
+                }
+                
+                result = supabase_client.table("projects").insert(project_data).execute()
+                print(f"Project saved to database: {result.data}")
+                
+                # Send database update to websocket
+                await manager.send_project_update(
+                    current_user.get("id", "unknown"),
+                    "project_saved",
+                    {"message": "Project saved to 5AM Founder database"}
+                )
+            else:
+                print("Warning: Could not save project to database - Supabase client not available")
+        except Exception as e:
+            # Log the error but don't fail the repository creation
+            print(f"Error saving project to database: {str(e)}")
+            # Still send a warning to the user
+            await manager.send_project_update(
+                current_user.get("id", "unknown"),
+                "database_warning",
+                {"message": "Repository created successfully, but could not save to project database"}
+            )
+        
         return RepositoryResponse(
             id=repo.id,
             name=repo.name,
@@ -459,6 +501,7 @@ async def delete_repository(
         # Get the repository
         try:
             repository = g.get_repo(f"{owner}/{repo}")
+            repo_id = repository.id  # Store the ID before deletion
         except GithubException as e:
             if e.status == 404:
                 raise HTTPException(
@@ -467,7 +510,22 @@ async def delete_repository(
                 )
             raise
         
-        # Delete the repository
+        # Delete from Supabase database first (using github_repo_id)
+        try:
+            if supabase_client:
+                # Delete project from database using github_repo_id
+                result = supabase_client.table("projects").delete().eq("github_repo_id", repo_id).execute()
+                if result.data:
+                    print(f"Project deleted from database: {repo_id}")
+                else:
+                    print(f"No project found in database with github_repo_id: {repo_id}")
+            else:
+                print("Warning: Could not delete project from database - Supabase client not available")
+        except Exception as e:
+            # Log the error but don't fail the repository deletion
+            print(f"Error deleting project from database: {str(e)}")
+        
+        # Delete the repository from GitHub
         repository.delete()
         
         return {"message": f"Repository {owner}/{repo} deleted successfully."}

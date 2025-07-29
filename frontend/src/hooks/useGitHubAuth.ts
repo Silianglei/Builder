@@ -66,6 +66,7 @@ export function useGitHubAuth() {
       setAuthState({
         isConnected: false,
         hasRepoScope: false,
+        hasDeleteRepoScope: false,
         scopes: [],
         githubUsername: null
       })

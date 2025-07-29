@@ -6,7 +6,7 @@ import logging
 import uuid
 
 from .config import get_settings
-from .routers import auth, users, github
+from .routers import auth, users, github, projects
 from .db.supabase_client import get_supabase_client
 from .middleware import SecurityHeadersMiddleware, RateLimitMiddleware
 from .websocket_manager import manager
@@ -51,6 +51,7 @@ app.add_middleware(
 app.include_router(auth.router, prefix=f"{settings.API_V1_STR}/auth", tags=["auth"])
 app.include_router(users.router, prefix=f"{settings.API_V1_STR}/users", tags=["users"])
 app.include_router(github.router, tags=["github"])
+app.include_router(projects.router, tags=["projects"])
 
 # Set up logging
 logger = logging.getLogger("uvicorn")

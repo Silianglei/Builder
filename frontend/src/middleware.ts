@@ -39,15 +39,15 @@ export function middleware(request: NextRequest) {
     "base-uri 'self'",
     "form-action 'self' https://accounts.google.com https://github.com",
     "object-src 'none'",
-    "script-src-attr 'none'",
-    "upgrade-insecure-requests"
+    "script-src-attr 'none'"
   ]
-
-  // In development, allow Next.js hot reload
-  if (process.env.NODE_ENV === 'development') {
-    cspDirectives.push("script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:*")
-    cspDirectives.push("connect-src 'self' https://*.supabase.co wss://*.supabase.co http://localhost:* ws://localhost:*")
+  
+  // Only add upgrade-insecure-requests in production
+  if (process.env.NODE_ENV === 'production') {
+    cspDirectives.push("upgrade-insecure-requests")
   }
+
+  // In development, we already have the necessary directives above
 
   response.headers.set(
     'Content-Security-Policy',

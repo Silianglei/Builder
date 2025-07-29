@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     # Supabase Configuration
     SUPABASE_URL: str
     SUPABASE_ANON_KEY: str
+    SUPABASE_SERVICE_ROLE_KEY: str = ""  # Optional - for backend operations
     
     # JWT Configuration
     JWT_SECRET_KEY: str = "your-jwt-secret-key"  # MUST be updated from Supabase Dashboard

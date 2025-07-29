@@ -249,17 +249,9 @@ export default function DashboardPage() {
     }
   }, [router, refresh])
   
-  // Filter only 5AM Founder repositories
+  // All repositories from our database are 5AM Founder projects
+  // No need to filter anymore
   const filteredRepos = repositories
-    .map(repo => ({
-      ...repo,
-      is_5am_founder: repo.description?.toLowerCase().includes('5am founder') || 
-                      repo.description?.toLowerCase().includes('created with 5am founder') ||
-                      repo.topics?.includes('5am-founder') ||
-                      repo.topics?.includes('5amfounder') ||
-                      false
-    }))
-    .filter(repo => repo.is_5am_founder)
   
   return (
     <ProtectedRoute>
@@ -367,7 +359,7 @@ export default function DashboardPage() {
                   <p className="text-base text-gray-400">
                     {filteredRepos.length === 0 
                       ? 'No projects yet' 
-                      : `${filteredRepos.length} ${filteredRepos.length === 1 ? 'project' : 'projects'} created with 5AM Founder`
+                      : `${filteredRepos.length} ${filteredRepos.length === 1 ? 'project' : 'projects'}`
                     }
                   </p>
                 </div>
